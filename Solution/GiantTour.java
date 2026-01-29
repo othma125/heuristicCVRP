@@ -104,17 +104,23 @@ public class GiantTour implements Comparable<GiantTour> {
     }
     
     public void export(InputData data) throws IOException {
-        String instanceName = data.FileName.replaceFirst("\\.vrp$", "");
-        String fileName = "Instance = " + instanceName + ", Cost = " + this.getFitness() + ".sol";
-        File output = new File("Output");
-        if (!output.exists())
-            output.mkdirs();
-        output = new File("Output//" + instanceName);
-        if (!output.exists())
-            output.mkdirs();
-        File outFile = new File(output, fileName);
+
+        String instanceName =
+                new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
+
+        File baseDir = new File("Output");
+        File instanceDir = new File(baseDir, instanceName);
+        instanceDir.mkdirs();
+
+        String fileName =
+                "Instance = " + instanceName +
+                "_Cost = " + (int) this.getFitness() + ".sol";
+
+        File outFile = new File(instanceDir, fileName);
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(outFile))) {
             bw.write(this.export());
+            bw.newLine();
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }

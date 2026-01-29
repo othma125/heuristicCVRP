@@ -263,9 +263,4 @@ public final class Route implements Comparable<Route> {
     public int getLength() {
         return this.Sequence.length;
     }
-
-    @Override
-    public void close() {
-        this.Sequence = null;
-    }
 }

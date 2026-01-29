@@ -23,7 +23,7 @@ public class main {
      */
     public static void main(String[] args) throws IOException {
         
-        InputData data = new InputData("A//A-n32-k5.vrp");
+        InputData data = new InputData("CVRPLib//A//A-n32-k5.vrp");
         GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
         algorithm.Run();
         

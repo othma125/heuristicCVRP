@@ -18,7 +18,7 @@ public class InputData {
     
     public InputData(String file) throws IOException {
         this.FileName = file;
-        try (BufferedReader br = new BufferedReader(new FileReader("CVRPLib//" + this.FileName))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(this.FileName))) {
             String line;
             String section = "";
             
