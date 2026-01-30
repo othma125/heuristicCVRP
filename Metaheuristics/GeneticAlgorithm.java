@@ -39,7 +39,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if(!this.Population[0].isFeasible())
             return;
         do {
-            // this.Selection();
             IntStream.range(0, this.PopulationSize).forEach(i -> this.Selection());
         } while (this.nonStopCondition());
         this.EndTime = System.currentTimeMillis() - this.StartTime;
@@ -58,9 +57,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
         else {
             parent1.Split(this.Data, parent1.getFitness(), true);
             parent2.Split(this.Data, parent2.getFitness(), true);
-            this.setBestSolution(parent1);
-            this.setBestSolution(parent2);
-            Arrays.sort(this.Population);
+            if (this.setBestSolution(parent1) || this.setBestSolution(parent2))
+                Arrays.sort(this.Population);
         }
     }
     
