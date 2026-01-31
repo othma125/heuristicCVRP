@@ -2,8 +2,6 @@ package Solution;
 
 import Data.InputData;
 import Solution.LSM.LocalSearchMove;
-import Solution.LSM.LeftShift;
-import Solution.LSM.RightShift;
 import java.lang.management.ManagementFactory;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,14 +46,9 @@ public class AuxiliaryGraph {
                                 .mapToObj(AuxiliaryGraphNode::new)
                                 .toArray(AuxiliaryGraphNode[]::new);
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
-        this.setArcs();
-    }
-
-    private void setArcs() {
         Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], null, gt))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
-        // System.out.print("before ");
         synchronized (this) {
             try {
                 this.wait();
@@ -63,7 +56,6 @@ public class AuxiliaryGraph {
                 Logger.getLogger(AuxiliaryGraph.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        // System.out.println(this.isFeasible());
         this.Executor.shutdown();
     }
     
@@ -83,7 +75,7 @@ public class AuxiliaryGraph {
                         });
     }
 
-    private void setNewThread(AuxiliaryGraphNode node) {
+    private void setNewSetters(AuxiliaryGraphNode node) {
         node.Lock.lock();
         try {
             if (this.ArcsSetters.stream()
@@ -191,7 +183,6 @@ public class AuxiliaryGraph {
                                                                     .map(index -> {
                                                                         if (index < old_route.getLength())
                                                                             return old_route.getStop(index);
-//                                                                        return sequence_as_list.get(index - old_route.getLength());
                                                                         return sequence_as_array[index - old_route.getLength()];
                                                                     })
                                                                     .toArray();
@@ -204,7 +195,6 @@ public class AuxiliaryGraph {
                                                                     .map(index -> {
                                                                         if (index < sequence_as_array.length)
                                                                             return sequence_as_array[index];
-//                                                                            return sequence_as_list.get(index);
                                                                         return old_route.getStop(index - sequence_as_array.length);
                                                                     })
                                                                     .toArray();
@@ -263,7 +253,7 @@ public class AuxiliaryGraph {
         private void Break(AuxiliaryGraphNode node) {
             this.NodeProcessingWith = AuxiliaryGraph.this.Length;
             if (node.NodeIndex < AuxiliaryGraph.this.Length && node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible())
-                AuxiliaryGraph.this.setNewThread(node);
+                AuxiliaryGraph.this.setNewSetters(node);
             else
                 AuxiliaryGraph.this.clear();
         }
@@ -271,7 +261,7 @@ public class AuxiliaryGraph {
         private void Foreward(AuxiliaryGraphNode node) {
             this.NodeProcessingWith++;
             if (node.NodeIndex < AuxiliaryGraph.this.Length && node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible())
-                AuxiliaryGraph.this.setNewThread(node);
+                AuxiliaryGraph.this.setNewSetters(node);
             else
                 AuxiliaryGraph.this.clear();
         }

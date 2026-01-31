@@ -60,7 +60,7 @@ public class AuxiliaryGraphNode {
                 c = this.Label < Double.POSITIVE_INFINITY;
                 this.Label = label;
                 Solution new_solution = new Solution(this.Label, solution.getRoutes().size());
-                for(Route route : solution.getRoutes())
+                for (Route route : solution.getRoutes())
                     new_solution.add(route == old_route ? new_route : route);
                 this.Solution = new_solution;
             }
