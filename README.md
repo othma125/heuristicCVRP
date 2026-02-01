@@ -4,7 +4,6 @@ This project solves **Capacitated Vehicle Routing Problem (CVRP)** instances usi
 
 The solver is **CVRP-native** (not a TSP wrapper): it uses a **giant tour representation** combined with a **graph-based splitting procedure** to generate feasible vehicle routes under capacity constraints, and applies rich intra- and inter-route local search moves.
 
-> ⚠️ Note: a **benchmark main class is not implemented yet**. Currently, the project is designed to run **single CVRP instances**.
 
 Reference: CVRPLIB – http://vrp.atd-lab.inf.puc-rio.br/index.php/en/
 
@@ -50,6 +49,7 @@ HEURISTICCVRP
 │   │   ├── RightShift.java
 │   │   └── LocalSearchMove.java
 └── main.java             # Entry point (single instance run)
+|__ benchmark.java        # Entry point (single folder run with .csv file exported containing a benchmark gap with BKS values)
 ```
 
 ---
