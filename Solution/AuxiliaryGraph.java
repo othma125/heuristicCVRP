@@ -46,7 +46,7 @@ public class AuxiliaryGraph {
                                 .mapToObj(AuxiliaryGraphNode::new)
                                 .toArray(AuxiliaryGraphNode[]::new);
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
-        Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], null, gt))
+        Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], gt))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
         synchronized (this) {
@@ -78,14 +78,13 @@ public class AuxiliaryGraph {
     private void setNewSetters(AuxiliaryGraphNode node) {
         node.Lock.lock();
         try {
-            if (this.ArcsSetters.stream()
-                                .allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) { 
+            if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) { 
                 Stream.of(this.GiantTours)
-                        .map(gt -> new ArcSetter(node, node.getBestSolution(), gt))
+                        .map(gt -> new ArcSetter(node, gt))
                         .peek(this.ArcsSetters::add)
                         .forEach(this.Executor::submit);
-                this.clear();
             }
+            this.clear();
         } finally {
             node.Lock.unlock();
         }
@@ -98,10 +97,10 @@ public class AuxiliaryGraph {
         private final Solution Solution;
         private int NodeProcessingWith;
 
-        ArcSetter(AuxiliaryGraphNode node, Solution sol, GiantTour gt) {
+        ArcSetter(AuxiliaryGraphNode node, GiantTour gt) {
             this.StartingNode = node;
+            this.Solution = node.NodeIndex == 0 ? null : node.getBestSolution();
             this.GiantTour = gt;
-            this.Solution = sol;
             this.NodeProcessingWith = this.StartingNode.NodeIndex;
         }
 
