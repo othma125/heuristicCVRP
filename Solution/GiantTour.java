@@ -104,9 +104,7 @@ public class GiantTour implements Comparable<GiantTour> {
     }
     
     public void export(InputData data) throws IOException {
-
-        String instanceName =
-                new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
+        String instanceName = new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
 
         File baseDir = new File("Output");
         File instanceDir = new File(baseDir, instanceName);
