@@ -83,8 +83,8 @@ public class AuxiliaryGraph {
                         .map(gt -> new ArcSetter(node, gt))
                         .peek(this.ArcsSetters::add)
                         .forEach(this.Executor::submit);
+                this.clear();
             }
-            this.clear();
         } finally {
             node.Lock.unlock();
         }
@@ -156,18 +156,15 @@ public class AuxiliaryGraph {
                     int stop = this.GiantTour.getStop(j++ % this.GiantTour.getLength());
                     if(this.Solution != null && this.Solution.contains(stop))
                         continue;
-                    if (cumulative_demand + AuxiliaryGraph.this.Data.getDemand(stop) > AuxiliaryGraph.this.Data.getCapacity()) {
-                        next_demand = AuxiliaryGraph.this.Data.getDemand(stop);
-                        break;
-                    }
+                    next_demand = AuxiliaryGraph.this.Data.getDemand(stop);
                     if (sequence_as_list.isEmpty())
                         cumulative_distance += AuxiliaryGraph.this.Data.getDepotToStopDistance(stop);
                     else
                         cumulative_distance += AuxiliaryGraph.this.Data.getTwoStopsDistance(sequence_as_list.getLast(), stop);
-                    cumulative_demand += AuxiliaryGraph.this.Data.getDemand(stop);
+                    cumulative_demand += next_demand;
                     sequence_as_list.add(stop);
                 }
-                if (sequence_as_list.size() == length) {
+                if (cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity() && sequence_as_list.size() == length) {
                     int[] sequence_as_array = sequence_as_list.stream().mapToInt(stop -> (int) stop).toArray();
                     double new_route_distance = cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.getLast());
                     Route new_route = new Route(sequence_as_array, cumulative_demand, new_route_distance);
