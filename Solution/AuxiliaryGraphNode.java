@@ -14,14 +14,14 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AuxiliaryGraphNode {
 
-    private Solution Solution;
+    private Solution BestSolution;
     private double Label = Double.POSITIVE_INFINITY;
     final int NodeIndex;
     final ReentrantLock Lock = new ReentrantLock();
 
     AuxiliaryGraphNode(int NodeIndex) {
         this.NodeIndex = NodeIndex;
-        this.Solution = null;
+        this.BestSolution = null;
         if (this.NodeIndex == 0)
             this.Label = 0d;
     }
@@ -41,7 +41,7 @@ public class AuxiliaryGraphNode {
                     for(Route route : solution.getRoutes())
                         new_solution.add(route);
                 new_solution.add(new_route);
-                this.Solution = new_solution;
+                this.BestSolution = new_solution;
             }
         } finally {
             this.Lock.unlock();
@@ -62,7 +62,7 @@ public class AuxiliaryGraphNode {
                 Solution new_solution = new Solution(this.Label, solution.getRoutes().size());
                 for (Route route : solution.getRoutes())
                     new_solution.add(route == old_route ? new_route : route);
-                this.Solution = new_solution;
+                this.BestSolution = new_solution;
             }
         } finally {
             this.Lock.unlock();
@@ -85,7 +85,7 @@ public class AuxiliaryGraphNode {
                         .forEach(new_solution::add);
                 new_solution.add(route1);
                 new_solution.add(route2);
-                this.Solution = new_solution;
+                this.BestSolution = new_solution;
             }
         } finally {
             this.Lock.unlock();
@@ -99,32 +99,32 @@ public class AuxiliaryGraphNode {
     }
 
     Solution getBestSolution() {
-        return this.Solution;
+        return this.BestSolution;
     }
 
     @Override
     public String toString() {
-        return this.isFeasible() ? this.Solution.toString() : "NULL";
+        return this.isFeasible() ? this.BestSolution.toString() : "NULL";
     }
 
     boolean isFeasible() {
-        return this.Solution != null;
+        return this.BestSolution != null;
 //        return Double.isFinite(this.Label);
     }
 
     int[] getNewSequence() {
-        return this.Solution.getNewSequence();
+        return this.BestSolution.getNewSequence();
     }
     
     String export() {
-        return this.isFeasible() ? this.Solution.export() : "NULL";
+        return this.isFeasible() ? this.BestSolution.export() : "NULL";
     }
 
     int getRoutesCount() {
-        return this.isFeasible() ? this.Solution.getRoutes().size() : 0;
+        return this.isFeasible() ? this.BestSolution.getRoutes().size() : 0;
     }
 
     double getLabel() {
-        return this.isFeasible() ? this.Solution.getTotalDistance() : Double.POSITIVE_INFINITY;
+        return this.isFeasible() ? this.BestSolution.getTotalDistance() : Double.POSITIVE_INFINITY;
     }
 }
