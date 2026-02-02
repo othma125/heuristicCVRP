@@ -111,7 +111,7 @@ public class HeuristicApproachBenchmark {
                                 gapStr = String.format(Locale.US, "%.2f", gap  * 100d);
                             }
                             // Write result to CSV
-                            writer.printf(Locale.US, "%s,%s,%s,%s,%s,%s\n", data.FileName, data.getDimension(), end_time, gt.getFitness(), best, gapStr);
+                            writer.printf(Locale.US, "%s,%s,%s,%s,%s,%s\n", entry.getKey(), data.getDimension(), end_time, gt.getFitness(), Double.toString(best), gapStr);
                         }
                         else 
                             System.out.println("No feasible solution found for " + data.FileName);
