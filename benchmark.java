@@ -27,7 +27,7 @@ import java.util.Comparator;
  *
  * @author Othmane
  */
-public class HeuristicApproachBenchmark {
+public class benchmark {
 
     /**
      * @param args the command line arguments

@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  */
 public class GeneticAlgorithm extends MetaHeuristic {
     
-    private final double CrossoverRate = 0.9d;
+    private final double CrossoverRate = 0.8d;
     private final GiantTour[] Population;
     private final int PopulationSize;
     private final int TournamentSize = 5;
@@ -51,7 +51,10 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (Math.random() < this.CrossoverRate && parent1 != parent2) 
             this.UpdatePopulation(new GiantTour(this.Data, parent1, parent2));  
         else if (parent1 == parent2) {
-            GiantTour random = new GiantTour(this.Data);
+            GiantTour random;
+            do {
+                random = new GiantTour(this.Data);
+            } while (!random.isFeasible());
             this.UpdatePopulation(new GiantTour(this.Data, parent1, random));  
         }
         else {

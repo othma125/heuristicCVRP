@@ -49,20 +49,22 @@ public class AuxiliaryGraph {
         Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], gt))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
-        synchronized (this) {
+        // System.out.print("Before");
+        synchronized (this.ArcsSetters) {
             try {
-                this.wait();
+                this.ArcsSetters.wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(AuxiliaryGraph.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        // System.out.println(" After"); 
         this.Executor.shutdown();
     }
     
     private void clear() {
         if (this.ArcsSetters.isEmpty()) {
-            synchronized (this) {
-                this.notify();
+            synchronized (this.ArcsSetters) {
+                this.ArcsSetters.notifyAll();
             }
             return;
         }
@@ -76,18 +78,19 @@ public class AuxiliaryGraph {
     }
 
     private void setNewSetters(AuxiliaryGraphNode node) {
-        node.Lock.lock();
-        try {
-            if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) { 
+        if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) { 
+            node.Lock.lock();
+            try {
                 Stream.of(this.GiantTours)
                         .map(gt -> new ArcSetter(node, gt))
                         .peek(this.ArcsSetters::add)
                         .forEach(this.Executor::submit);
-                this.clear();
+            } finally {
+                node.Lock.unlock();
             }
-        } finally {
-            node.Lock.unlock();
+            this.clear();
         }
+            // this.clear();
     }
 
     class ArcSetter implements Callable<Void> {
@@ -151,27 +154,27 @@ public class AuxiliaryGraph {
                     this.Foreward(EndingNode);
                     continue;
                 }
-                int next_demand = AuxiliaryGraph.this.Data.getCapacity();
                 while (sequence_as_list.size() < length) {
-                    int stop = this.GiantTour.getStop(j++ % this.GiantTour.getLength());
-                    if(this.Solution != null && this.Solution.contains(stop))
-                        continue;
-                    next_demand = AuxiliaryGraph.this.Data.getDemand(stop);
-                    if (sequence_as_list.isEmpty())
-                        cumulative_distance += AuxiliaryGraph.this.Data.getDepotToStopDistance(stop);
-                    else
-                        cumulative_distance += AuxiliaryGraph.this.Data.getTwoStopsDistance(sequence_as_list.getLast(), stop);
-                    cumulative_demand += next_demand;
-                    sequence_as_list.add(stop);
+                    int stop = this.GiantTour.getStop(j++ % AuxiliaryGraph.this.Length);
+                    if (this.Solution == null || !this.Solution.contains(stop)) {
+                        if (cumulative_demand + AuxiliaryGraph.this.Data.getDemand(stop) > AuxiliaryGraph.this.Data.getCapacity()) 
+                            break;
+                        cumulative_demand += AuxiliaryGraph.this.Data.getDemand(stop);
+                        if (sequence_as_list.isEmpty())
+                            cumulative_distance += AuxiliaryGraph.this.Data.getDepotToStopDistance(stop);
+                        else
+                            cumulative_distance += AuxiliaryGraph.this.Data.getTwoStopsDistance(sequence_as_list.getLast(), stop);
+                        sequence_as_list.add(stop);
+                    }
                 }
-                if (cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity() && sequence_as_list.size() == length) {
+                if (sequence_as_list.size() == length) {
                     int[] sequence_as_array = sequence_as_list.stream().mapToInt(stop -> (int) stop).toArray();
                     double new_route_distance = cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.getLast());
                     Route new_route = new Route(sequence_as_array, cumulative_demand, new_route_distance);
-                    if (AuxiliaryGraph.this.LSM && cumulative_demand + next_demand > AuxiliaryGraph.this.Data.getCapacity()) 
-//                    if (AuxiliaryGraph.this.LSM) 
+                    if (AuxiliaryGraph.this.LSM) 
                         new_route.LocalSearch(AuxiliaryGraph.this.Data);
-                    if (!EndingNode.UpdateLabel(this.Solution, new_route) && this.Solution != null)
+                    EndingNode.UpdateLabel(this.Solution, new_route);
+                    if (this.Solution != null)
                         for (Route old_route : this.Solution.getRoutes()) {
                             final int combined_demand = old_route.getSumDemand() + cumulative_demand;
                             if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
@@ -183,8 +186,7 @@ public class AuxiliaryGraph {
                                                                     })
                                                                     .toArray();
                                 Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
-                                if (AuxiliaryGraph.this.LSM && combined_demand + next_demand > AuxiliaryGraph.this.Data.getCapacity())
-//                                if (AuxiliaryGraph.this.LSM) 
+                                if (AuxiliaryGraph.this.LSM) 
                                     combined_route1.LocalSearch(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
                                 int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
@@ -195,13 +197,11 @@ public class AuxiliaryGraph {
                                                                     })
                                                                     .toArray();
                                 Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
-                                if (AuxiliaryGraph.this.LSM && combined_demand + next_demand > AuxiliaryGraph.this.Data.getCapacity())
-//                                if (AuxiliaryGraph.this.LSM) 
+                                if (AuxiliaryGraph.this.LSM) 
                                     combined_route2.LocalSearch(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                             }
-                            else if (cumulative_demand + next_demand > AuxiliaryGraph.this.Data.getCapacity()
-                                        && old_route.getSumDemand() + next_demand > AuxiliaryGraph.this.Data.getCapacity()) {
+                            else {
                                 LocalSearchMove swap = old_route.getSwap(AuxiliaryGraph.this.Data, new_route);
                                 if (swap != null && swap.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
                                     swap.Perform();
@@ -221,8 +221,8 @@ public class AuxiliaryGraph {
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1 == null ? route2 : route1);
                                     break;
                                 }
-                            }
-                            else {
+                            // }
+                            // else {
                                 LocalSearchMove shift = old_route.getShift(AuxiliaryGraph.this.Data, new_route);
                                 if (shift != null && shift.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
                                     shift.Perform();
