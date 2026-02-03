@@ -48,16 +48,17 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private void Selection() {
         GiantTour parent1 = this.tournamentSelection();
         GiantTour parent2 = this.tournamentSelection();
-        if (Math.random() < this.CrossoverRate && parent1 != parent2) 
-            this.UpdatePopulation(new GiantTour(this.Data, parent1, parent2));  
+        if (Math.random() < this.CrossoverRate && parent1 != parent2) {
+            GiantTour graph_crossover = new GiantTour(this.Data, parent1, parent2);
+            this.UpdatePopulation(graph_crossover);
+        }
         else if (parent1 == parent2) {
-            GiantTour random;
-            do {
-                random = new GiantTour(this.Data);
-            } while (!random.isFeasible());
-            this.UpdatePopulation(new GiantTour(this.Data, parent1, random));  
+            GiantTour random = new GiantTour(this.Data); 
+            GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
+            this.UpdatePopulation(graph_crossover); 
         }
         else {
+            // repeat splitting procedure to discover more improvement possibilities
             parent1.Split(this.Data, parent1.getFitness(), true);
             parent2.Split(this.Data, parent2.getFitness(), true);
             if (this.setBestSolution(parent1) || this.setBestSolution(parent2))

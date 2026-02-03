@@ -14,14 +14,13 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AuxiliaryGraphNode {
 
-    private Solution BestSolution;
+    private Solution BestSolution = null;
     private double Label = Double.POSITIVE_INFINITY;
     final int NodeIndex;
     final ReentrantLock Lock = new ReentrantLock();
 
     AuxiliaryGraphNode(int NodeIndex) {
         this.NodeIndex = NodeIndex;
-        this.BestSolution = null;
         if (this.NodeIndex == 0)
             this.Label = 0d;
     }
@@ -34,7 +33,7 @@ public class AuxiliaryGraphNode {
         try {
             double label = (solution == null ? 0d : solution.getTotalDistance()) + new_route.getTraveledDistance();
             if (label < this.Label) {
-                c = this.Label < Double.POSITIVE_INFINITY;
+                c = Double.isFinite(this.Label);
                 this.Label = label;
                 Solution new_solution = new Solution(this.Label, solution == null ? 1 : solution.getRoutes().size() + 1);
                 if(solution != null)
@@ -57,7 +56,7 @@ public class AuxiliaryGraphNode {
         try {
             double label = solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
             if (label < this.Label) {
-                c = this.Label < Double.POSITIVE_INFINITY;
+                c = Double.isFinite(this.Label);
                 this.Label = label;
                 Solution new_solution = new Solution(this.Label, solution.getRoutes().size());
                 for (Route route : solution.getRoutes())
@@ -76,7 +75,7 @@ public class AuxiliaryGraphNode {
         try {
             double label = solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             if (label < this.Label) {
-                c = this.Label < Double.POSITIVE_INFINITY;
+                c = Double.isFinite(this.Label);
                 this.Label = label;
                 Solution new_solution = new Solution(this.Label, solution.getRoutes().size() + 1);
                 solution.getRoutes()
@@ -108,12 +107,12 @@ public class AuxiliaryGraphNode {
     }
 
     boolean isFeasible() {
-        return this.BestSolution != null;
-//        return Double.isFinite(this.Label);
+        // return this.BestSolution != null;
+        return Double.isFinite(this.Label);
     }
 
     int[] getNewSequence() {
-        return this.BestSolution.getNewSequence();
+        return this.isFeasible() ? this.BestSolution.getNewSequence() : null;
     }
     
     String export() {
@@ -125,6 +124,6 @@ public class AuxiliaryGraphNode {
     }
 
     double getLabel() {
-        return this.isFeasible() ? this.BestSolution.getTotalDistance() : Double.POSITIVE_INFINITY;
+        return this.Label;
     }
 }

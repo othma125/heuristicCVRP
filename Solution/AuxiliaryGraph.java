@@ -49,7 +49,6 @@ public class AuxiliaryGraph {
         Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], gt))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
-        // System.out.print("Before");
         synchronized (this.ArcsSetters) {
             try {
                 this.ArcsSetters.wait();
@@ -57,7 +56,6 @@ public class AuxiliaryGraph {
                 Logger.getLogger(AuxiliaryGraph.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        // System.out.println(" After"); 
         this.Executor.shutdown();
     }
     
@@ -102,7 +100,7 @@ public class AuxiliaryGraph {
 
         ArcSetter(AuxiliaryGraphNode node, GiantTour gt) {
             this.StartingNode = node;
-            this.Solution = node.NodeIndex == 0 ? null : node.getBestSolution();
+            this.Solution = node.getBestSolution();
             this.GiantTour = gt;
             this.NodeProcessingWith = this.StartingNode.NodeIndex;
         }
