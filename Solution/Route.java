@@ -132,7 +132,7 @@ public final class Route implements Comparable<Route> {
             this.LocalSearch(data);
     }
     
-    public LocalSearchMove get2Opt(InputData data, Route other) {
+    public LocalSearchMove getLSM(InputData data, Route other) {
         LocalSearchMove lsm;
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
@@ -148,11 +148,6 @@ public final class Route implements Comparable<Route> {
                 if (lsm.getGain() < 0d && lsm.isFeasible(data))
                     return lsm;
             }
-        return null;
-    }
-    
-    public LocalSearchMove getSwap(InputData data, Route other) {
-        LocalSearchMove lsm;
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
                 lsm = new Swap(data, i, j, this.Sequence, other.Sequence);
@@ -162,13 +157,8 @@ public final class Route implements Comparable<Route> {
                         return lsm;
                 }
             }
-        return null;
-    }
-    
-    public LocalSearchMove getShift(InputData data, Route other) {
-        LocalSearchMove lsm;
-	int max1 = (int) Math.sqrt(this.Sequence.length);
-	int max2 = (int) Math.sqrt(other.Sequence.length);
+        int max1 = (int) Math.sqrt(this.Sequence.length);
+        int max2 = (int) Math.sqrt(other.Sequence.length);
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max2 && j + degree < other.Sequence.length; degree++) {

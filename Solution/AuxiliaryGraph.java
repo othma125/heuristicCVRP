@@ -173,8 +173,7 @@ public class AuxiliaryGraph {
                     Route new_route = new Route(sequence_as_array, cumulative_demand, new_route_distance);
                     if (AuxiliaryGraph.this.LSM) 
                         new_route.LocalSearch(AuxiliaryGraph.this.Data);
-                    EndingNode.UpdateLabel(this.Solution, new_route);
-                    if (this.Solution != null)
+                    if (!EndingNode.UpdateLabel(this.Solution, new_route) && this.Solution != null)
                         for (Route old_route : this.Solution.getRoutes()) {
                             final int combined_demand = old_route.getSumDemand() + cumulative_demand;
                             if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
@@ -202,32 +201,11 @@ public class AuxiliaryGraph {
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                             }
                             else {
-                                LocalSearchMove swap = old_route.getSwap(AuxiliaryGraph.this.Data, new_route);
-                                if (swap != null && swap.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
-                                    swap.Perform();
-                                    Route route1 = swap.getRoute1(AuxiliaryGraph.this.Data);
-                                    Route route2 = swap.getRoute2(AuxiliaryGraph.this.Data);
-                                    EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
-                                    break;
-                                }
-                                LocalSearchMove _2opt = old_route.get2Opt(AuxiliaryGraph.this.Data, new_route);
-                                if (_2opt != null && _2opt.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
-                                    _2opt.Perform();
-                                    Route route1 = _2opt.getRoute1(AuxiliaryGraph.this.Data);
-                                    Route route2 = _2opt.getRoute2(AuxiliaryGraph.this.Data);
-                                    if (route1 != null && route2 != null)
-                                        EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
-                                    else
-                                        EndingNode.UpdateLabel(this.Solution, old_route, route1 == null ? route2 : route1);
-                                    break;
-                                }
-                            // }
-                            // else {
-                                LocalSearchMove shift = old_route.getShift(AuxiliaryGraph.this.Data, new_route);
-                                if (shift != null && shift.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
-                                    shift.Perform();
-                                    Route route1 = shift.getRoute1(AuxiliaryGraph.this.Data);
-                                    Route route2 = shift.getRoute2(AuxiliaryGraph.this.Data);
+                                LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
+                                if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
+                                    lsm.Perform();
+                                    Route route1 = lsm.getRoute1(AuxiliaryGraph.this.Data);
+                                    Route route2 = lsm.getRoute2(AuxiliaryGraph.this.Data);
                                     if (route1 != null && route2 != null)
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
                                     else
