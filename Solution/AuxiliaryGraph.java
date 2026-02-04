@@ -58,39 +58,21 @@ public class AuxiliaryGraph {
         }
         this.Executor.shutdown();
     }
-    
-    private void clear() {
-        if (this.ArcsSetters.isEmpty()) {
-            synchronized (this.ArcsSetters) {
-                this.ArcsSetters.notifyAll();
-            }
-            return;
-        }
-        this.ArcsSetters.stream()
-                        .filter(setter -> setter.NodeProcessingWith == this.Length)
-                        .findAny()
-                        .ifPresent(setter -> {
-                            this.ArcsSetters.remove(setter);
-                            this.clear();
-                        });
-    }
 
     private void setNewSetters(AuxiliaryGraphNode node) {
-        if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) { 
-            node.Lock.lock();
-            try {
-                Stream.of(this.GiantTours)
-                        .map(gt -> new ArcSetter(node, gt))
-                        .peek(this.ArcsSetters::add)
-                        .forEach(this.Executor::submit);
-            } finally {
-                node.Lock.unlock();
+        node.Lock.lock();
+        try {
+            if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
+                if (node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible()) 
+                    Stream.of(this.GiantTours)
+                            .map(gt -> new ArcSetter(node, gt))
+                            .peek(this.ArcsSetters::add)
+                            .forEach(this.Executor::submit);
             }
-            this.clear();
+        } finally {
+            node.Lock.unlock();
         }
-            // this.clear();
     }
-
     class ArcSetter implements Callable<Void> {
 
         private final AuxiliaryGraphNode StartingNode;
@@ -208,7 +190,7 @@ public class AuxiliaryGraph {
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
                                     else
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1 == null ? route2 : route1);
-                                    break;
+                                    // break;
                                 }
                             }
                         }
@@ -224,18 +206,27 @@ public class AuxiliaryGraph {
         
         private void Break(AuxiliaryGraphNode node) {
             this.NodeProcessingWith = AuxiliaryGraph.this.Length;
-            if (node.NodeIndex < AuxiliaryGraph.this.Length && node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible())
+            AuxiliaryGraph.this.ArcsSetters.remove(this);
+            if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
+                synchronized (AuxiliaryGraph.this.ArcsSetters) {
+                    AuxiliaryGraph.this.ArcsSetters.notifyAll();
+                }
+            }
+            else if (node.NodeIndex < AuxiliaryGraph.this.Length)
                 AuxiliaryGraph.this.setNewSetters(node);
-            else
-                AuxiliaryGraph.this.clear();
         }
         
         private void Foreward(AuxiliaryGraphNode node) {
             this.NodeProcessingWith++;
-            if (node.NodeIndex < AuxiliaryGraph.this.Length && node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible())
+            if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) 
+                AuxiliaryGraph.this.ArcsSetters.remove(this);
+            if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
+                synchronized (AuxiliaryGraph.this.ArcsSetters) {
+                    AuxiliaryGraph.this.ArcsSetters.notifyAll();
+                }
+            }
+            else if (node.NodeIndex < AuxiliaryGraph.this.Length)
                 AuxiliaryGraph.this.setNewSetters(node);
-            else
-                AuxiliaryGraph.this.clear();
         }
     }
 

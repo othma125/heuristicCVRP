@@ -46,7 +46,7 @@ public class benchmark {
         String outputFile = "results " + benchmarkDirPath.replace("//", ".") +".csv";
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
             // Header
-            writer.println("File Name,Dimension,Best Solution Reach Time(ms),Cost Value,Known Optimal,Gap(%)");
+            writer.println("File Name,Dimension,Best Solution Reach Time(ms),Cost Value,BKS,Gap(%)");
 
             // Build and sort by StopsCount
             Map<String, InputData> datasets = Arrays.stream(files)
