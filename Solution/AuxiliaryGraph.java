@@ -190,7 +190,8 @@ public class AuxiliaryGraph {
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
                                     else
                                         EndingNode.UpdateLabel(this.Solution, old_route, route1 == null ? route2 : route1);
-                                    // break;
+                                    if (!AuxiliaryGraph.this.LSM)
+                                        break;
                                 }
                             }
                         }
