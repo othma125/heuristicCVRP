@@ -23,7 +23,7 @@ public final class Route implements Comparable<Route> {
 
     @Override
     public int hashCode() {
-        return 31 + Double.hashCode(this.TraveledDistance) + this.Sequence.length;
+        return 31 * Double.hashCode(this.TraveledDistance) + this.Sequence.length;
     }
 
     @Override
