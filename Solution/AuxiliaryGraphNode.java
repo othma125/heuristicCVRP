@@ -113,7 +113,17 @@ public class AuxiliaryGraphNode {
     }
 
     int[] getNewSequence() {
-        return this.isFeasible() ? this.BestSolution.getNewSequence() : null;
+        if (this.isFeasible()) {
+            int[] seq = null;
+            this.Lock.lock();
+            try {
+                seq = this.BestSolution.getNewSequence();
+            } finally {
+                this.Lock.unlock();
+            }
+            return seq;
+        }
+        return null;
     }
     
     String export() {
