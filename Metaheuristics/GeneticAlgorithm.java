@@ -59,10 +59,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
         }
         else {
             // repeat splitting procedure to discover more improvement possibilities
-            parent1.Split(this.Data, parent1.getFitness(), true);
-            parent2.Split(this.Data, parent2.getFitness(), true);
-            if (this.setBestSolution(parent1) || this.setBestSolution(parent2))
-                Arrays.sort(this.Population);
+            this.UpdatePopulation(new GiantTour(this.Data, parent1));
+            this.UpdatePopulation(new GiantTour(this.Data, parent2));
         }
     }
     
