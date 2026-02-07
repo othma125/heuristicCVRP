@@ -29,7 +29,7 @@ public class GiantTour implements Comparable<GiantTour> {
     public GiantTour(InputData data, GiantTour ... giant_tours) {
         double bound = Stream.of(giant_tours).filter(GiantTour::isFeasible)
                                             .mapToDouble(GiantTour::getFitness)
-                                            .max()
+                                            .min()
                                             .getAsDouble();
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
         if (graph.isFeasible()) {

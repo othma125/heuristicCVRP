@@ -62,12 +62,11 @@ public class AuxiliaryGraph {
     private void setNewSetters(AuxiliaryGraphNode node) {
         node.Lock.lock();
         try {
-            if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
-                if (node.getLabel() < AuxiliaryGraph.this.Bound && node.isFeasible()) 
-                    Stream.of(this.GiantTours)
-                            .map(gt -> new ArcSetter(node, gt))
-                            .peek(this.ArcsSetters::add)
-                            .forEach(this.Executor::submit);
+            if (node.getLabel() < AuxiliaryGraph.this.Bound && this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
+                Stream.of(this.GiantTours)
+                        .map(gt -> new ArcSetter(node, gt))
+                        .peek(this.ArcsSetters::add)
+                        .forEach(this.Executor::submit);
             }
         } finally {
             node.Lock.unlock();
@@ -82,7 +81,7 @@ public class AuxiliaryGraph {
 
         ArcSetter(AuxiliaryGraphNode node, GiantTour gt) {
             this.StartingNode = node;
-            this.Solution = node.getBestSolution();
+            this.Solution = this.StartingNode.getBestSolution();
             this.GiantTour = gt;
             this.NodeProcessingWith = this.StartingNode.NodeIndex;
         }
@@ -186,10 +185,7 @@ public class AuxiliaryGraph {
                                     lsm.Perform();
                                     Route route1 = lsm.getRoute1(AuxiliaryGraph.this.Data);
                                     Route route2 = lsm.getRoute2(AuxiliaryGraph.this.Data);
-                                    if (route1 != null && route2 != null)
-                                        EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
-                                    else
-                                        EndingNode.UpdateLabel(this.Solution, old_route, route1 == null ? route2 : route1);
+                                    EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
                                     if (!AuxiliaryGraph.this.LSM)
                                         break;
                                 }
@@ -219,12 +215,15 @@ public class AuxiliaryGraph {
         
         private void Foreward(AuxiliaryGraphNode node) {
             this.NodeProcessingWith++;
-            if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) 
+            if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) {
                 AuxiliaryGraph.this.ArcsSetters.remove(this);
-            if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
-                synchronized (AuxiliaryGraph.this.ArcsSetters) {
-                    AuxiliaryGraph.this.ArcsSetters.notifyAll();
+                if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
+                    synchronized (AuxiliaryGraph.this.ArcsSetters) {
+                        AuxiliaryGraph.this.ArcsSetters.notifyAll();
+                    }
                 }
+                else if (node.NodeIndex < AuxiliaryGraph.this.Length)
+                    AuxiliaryGraph.this.setNewSetters(node);
             }
             else if (node.NodeIndex < AuxiliaryGraph.this.Length)
                 AuxiliaryGraph.this.setNewSetters(node);

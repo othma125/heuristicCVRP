@@ -70,6 +70,8 @@ public class AuxiliaryGraphNode {
     }
 
     boolean UpdateLabel(Solution solution, Route old_route, Route route1, Route route2) {
+        if (route1 == null || route2 == null)
+            return this.UpdateLabel(solution, old_route, route1 == null ? route2 : route1);
         boolean c = false;
         this.Lock.lock();
         try {
@@ -107,7 +109,6 @@ public class AuxiliaryGraphNode {
     }
 
     boolean isFeasible() {
-        // return this.BestSolution != null;
         return Double.isFinite(this.Label);
     }
 
