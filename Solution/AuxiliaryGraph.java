@@ -136,8 +136,6 @@ public class AuxiliaryGraph {
                 while (sequence_as_list.size() < length) {
                     int stop = this.GiantTour.getStop(j++ % AuxiliaryGraph.this.Length);
                     if (this.Solution == null || !this.Solution.contains(stop)) {
-                        if (cumulative_demand + AuxiliaryGraph.this.Data.getDemand(stop) > AuxiliaryGraph.this.Data.getCapacity()) 
-                            break;
                         cumulative_demand += AuxiliaryGraph.this.Data.getDemand(stop);
                         if (sequence_as_list.isEmpty())
                             cumulative_distance += AuxiliaryGraph.this.Data.getDepotToStopDistance(stop);
@@ -146,53 +144,50 @@ public class AuxiliaryGraph {
                         sequence_as_list.add(stop);
                     }
                 }
-                if (sequence_as_list.size() == length) {
-                    int[] sequence_as_array = sequence_as_list.stream().mapToInt(stop -> (int) stop).toArray();
-                    double new_route_distance = cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.getLast());
-                    Route new_route = new Route(sequence_as_array, cumulative_demand, new_route_distance);
-                    if (AuxiliaryGraph.this.LSM) 
-                        new_route.LocalSearch(AuxiliaryGraph.this.Data);
-                    if (!EndingNode.UpdateLabel(this.Solution, new_route) && this.Solution != null)
-                        for (Route old_route : this.Solution.getRoutes()) {
-                            final int combined_demand = old_route.getSumDemand() + cumulative_demand;
-                            if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
-                                int[] combined_sequence1 = IntStream.range(0, old_route.getLength() + length)
-                                                                    .map(index -> {
-                                                                        if (index < old_route.getLength())
-                                                                            return old_route.getStop(index);
-                                                                        return sequence_as_array[index - old_route.getLength()];
-                                                                    })
-                                                                    .toArray();
-                                Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
-                                if (AuxiliaryGraph.this.LSM) 
-                                    combined_route1.LocalSearch(AuxiliaryGraph.this.Data);
+                int[] sequence_as_array = sequence_as_list.stream().mapToInt(stop -> (int) stop).toArray();
+                Route new_route = new Route(sequence_as_array, cumulative_demand, cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.getLast()));
+                if (cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity() && AuxiliaryGraph.this.LSM) 
+                    new_route.LocalSearch(AuxiliaryGraph.this.Data);
+                if ((cumulative_demand > AuxiliaryGraph.this.Data.getCapacity() || !EndingNode.UpdateLabel(this.Solution, new_route)) && this.Solution != null)
+                    for (Route old_route : this.Solution.getRoutes()) {
+                        final int combined_demand = old_route.getSumDemand() + cumulative_demand;
+                        if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
+                            int[] combined_sequence1 = IntStream.range(0, old_route.getLength() + length)
+                                                                .map(index -> {
+                                                                    if (index < old_route.getLength())
+                                                                        return old_route.getStop(index);
+                                                                    return sequence_as_array[index - old_route.getLength()];
+                                                                })
+                                                                .toArray();
+                            Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
+                            if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route1) && AuxiliaryGraph.this.LSM) {
+                                combined_route1.LocalSearch(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
-                                int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
-                                                                    .map(index -> {
-                                                                        if (index < sequence_as_array.length)
-                                                                            return sequence_as_array[index];
-                                                                        return old_route.getStop(index - sequence_as_array.length);
-                                                                    })
-                                                                    .toArray();
-                                Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
-                                if (AuxiliaryGraph.this.LSM) 
-                                    combined_route2.LocalSearch(AuxiliaryGraph.this.Data);
+                            }
+                            int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
+                                                                .map(index -> {
+                                                                    if (index < sequence_as_array.length)
+                                                                        return sequence_as_array[index];
+                                                                    return old_route.getStop(index - sequence_as_array.length);
+                                                                })
+                                                                .toArray();
+                            Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
+                            if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route2) && AuxiliaryGraph.this.LSM) {
+                                combined_route2.LocalSearch(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                             }
-                            else {
-                                LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
-                                if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
-                                    lsm.Perform();
-                                    Route route1 = lsm.getRoute1(AuxiliaryGraph.this.Data);
-                                    Route route2 = lsm.getRoute2(AuxiliaryGraph.this.Data);
-                                    EndingNode.UpdateLabel(this.Solution, old_route, route1, route2);
-                                    if (!AuxiliaryGraph.this.LSM)
-                                        break;
-                                }
+                        }
+                        else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity()) {
+                            LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
+                            if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
+                                lsm.Perform(AuxiliaryGraph.this.Data);
+                                EndingNode.UpdateLabel(this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
+                                if (!AuxiliaryGraph.this.LSM)
+                                    break;
                             }
                         }
-                }
-                else {
+                    }
+                if (cumulative_demand > AuxiliaryGraph.this.Data.getCapacity()) {
                     this.Break(EndingNode);
                     break;
                 }

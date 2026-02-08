@@ -21,41 +21,37 @@ public abstract class LocalSearchMove {
     final boolean OneSequence;
     final int I, J;
     final int Border;
-    int[] FirstSequence, SecondSequence;
+    Route FirstRoute, SecondRoute;
     double Gain = 0d;
     
     public abstract void setGain(InputData data);
+    public abstract void Perform(InputData data);
     public abstract boolean isFeasible(InputData data);
-    public abstract void Perform();
     
-    LocalSearchMove(String name, int i, int j, int[] ... sequences) {
+    LocalSearchMove(String name, int i, int j, Route ... routes) {
         this.Name = name;
-        if(sequences.length == 1 && i >= j)
+        if(routes.length == 1 && i >= j)
             throw new IllegalArgumentException("i should be smaller than j in LSM");
-        if(sequences.length > 2)
+        if(routes.length > 2)
             throw new IllegalArgumentException("routes number should be equals to 1 or 2 in LSM");
         this.Gain = 0d;
         this.I = i;
         this.J = j;
-        this.OneSequence = sequences.length == 1;
-        this.FirstSequence = sequences[0];
-        this.SecondSequence = this.OneSequence ? this.FirstSequence : sequences[1];
-        this.Border = this.OneSequence ? this.FirstSequence.length : this.SecondSequence.length;
+        this.OneSequence = routes.length == 1;
+        this.FirstRoute = routes[0];
+        this.SecondRoute = this.OneSequence ? this.FirstRoute : routes[1];
+        this.Border = this.OneSequence ? this.FirstRoute.getLength() : this.SecondRoute.getLength();
     }
 
     public double getGain() {
         return this.Gain;
     }
 
-    public Route getRoute1(InputData data) {
-        if (this.FirstSequence.length == 0)
-            return null;
-        return new Route(data, this.FirstSequence);
+    public Route getFirstRoute() {
+        return FirstRoute;
     }
 
-    public Route getRoute2(InputData data) {
-        if (this.SecondSequence.length == 0)
-            return null;
-        return new Route(data, this.SecondSequence);
+    public Route getSecondRoute() {
+        return SecondRoute;
     }
 }

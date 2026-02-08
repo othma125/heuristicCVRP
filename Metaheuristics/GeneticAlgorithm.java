@@ -67,7 +67,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private void UpdatePopulation(GiantTour newGiantTour) {
         if (newGiantTour == null || !newGiantTour.isFeasible())
             return;
-        if (newGiantTour.compareTo(this.Population[this.PopulationSize - 1]) < 0) {
+        if (newGiantTour.compareTo(this.getLast()) < 0) {
             int half = this.PopulationSize / 2;
             int randomIndex = half + (int) (Math.random() * (this.Population.length - half));
             if (this.setBestSolution(newGiantTour)) {
@@ -105,7 +105,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
         long current_time = System.currentTimeMillis();
         if (current_time - this.BestSolutionReachingTime <= this.StagnationMinTime)
             return true;
-        double probability = current_time - this.BestSolutionReachingTime;
+        double probability = current_time - this.BestSolutionReachingTime - this.StagnationMinTime;
         probability /= (double) (current_time - this.StartTime);
         return Math.random() > probability;
     }
@@ -119,5 +119,9 @@ public class GeneticAlgorithm extends MetaHeuristic {
                 bestInTournament = randomCompetitor;
         }
         return bestInTournament;
+    }
+    
+    private GiantTour getLast() {
+        return this.Population[this.PopulationSize - 1];
     }
 }

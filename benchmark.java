@@ -46,7 +46,7 @@ public class benchmark {
         String outputFile = "results " + benchmarkDirPath.replace("//", ".") +".csv";
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
             // Header
-            writer.println("File Name,Dimension,Best Solution Reach Time(ms),Cost Value,BKS,Gap(%)");
+            writer.println("File Name,Dimension,Best Solution Reach Time(ms),Cost Value,Known Optimal,Gap(%)");
 
             // Build and sort by StopsCount
             Map<String, InputData> datasets = Arrays.stream(files)
@@ -64,8 +64,8 @@ public class benchmark {
             Map<String, Double> bestKnownMap = datasets.keySet()
                                                         .stream()
                                                         .collect(Collectors.toMap(
-                                                            name -> name
-                                                            , name -> {
+                                                            name -> name,
+                                                            name -> {
                                                                 File file = new File(benchmarkDirPath + "//" + name + ".sol");
                                                                 try (BufferedReader br = Files.newBufferedReader(file.toPath())) {
                                                                     String line;
@@ -73,9 +73,8 @@ public class benchmark {
                                                                         line = line.trim();
                                                                         if (line.startsWith("Cost")) {
                                                                             String[] parts = line.split(" ");
-                                                                            if (parts.length == 2) {
+                                                                            if (parts.length == 2) 
                                                                                 return Double.parseDouble(parts[1].trim());
-                                                                            }
                                                                         }
                                                                     }
                                                                 } catch (IOException e) {
@@ -95,7 +94,7 @@ public class benchmark {
                         algorithm.Run();
                         if (algorithm.isFeasible()) {
                             GiantTour gt = algorithm.getBestGiantTour();
-                            System.out.println(gt);
+//                            System.out.println(gt);
                             // gt.export(data);
                             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms\n");
 

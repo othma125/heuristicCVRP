@@ -7,6 +7,7 @@ package Solution.LSM;
 
 import Data.InputData;
 import Solution.Move;
+import Solution.Route;
 import java.util.stream.IntStream;
 
 /**
@@ -19,70 +20,72 @@ public class RightShift extends LocalSearchMove {
     private final boolean With2Opt;
     private final int FirstBorder;
 
-    public RightShift(InputData data, boolean with2opt, int degree, int i, int j, int[]... sequences) {
-        super("RightShift", i, j, sequences);
+    public RightShift(InputData data, boolean with2opt, int degree, int i, int j, Route... routes) {
+        super("RightShift", i, j, routes);
         this.With2Opt = with2opt;
         this.Degree = degree;
-        this.FirstBorder = this.FirstSequence.length;
+        this.FirstBorder = this.FirstRoute.getLength();
     }
 
     @Override
     public void setGain(InputData data) {
         if (this.With2Opt) {
-            this.Gain += data.getTwoStopsDistance(this.SecondSequence[this.J], this.FirstSequence[this.I]);
+            this.Gain += data.getTwoStopsDistance(this.SecondRoute.getStop(this.J), this.FirstRoute.getStop(this.I));
             if (this.I == 0) {
-                this.Gain += data.getDepotToStopDistance(this.SecondSequence[this.J + this.Degree]);
-                this.Gain -= data.getDepotToStopDistance(this.FirstSequence[this.I]);
+                this.Gain += data.getDepotToStopDistance(this.SecondRoute.getStop(this.J + this.Degree));
+                this.Gain -= data.getDepotToStopDistance(this.FirstRoute.getStop(this.I));
             }
             else {
-                this.Gain += data.getTwoStopsDistance(this.FirstSequence[this.I - 1], this.SecondSequence[this.J + this.Degree]);
-                this.Gain -= data.getTwoStopsDistance(this.FirstSequence[this.I - 1], this.FirstSequence[this.I]);
+                this.Gain += data.getTwoStopsDistance(this.FirstRoute.getStop(this.I - 1), this.SecondRoute.getStop(this.J + this.Degree));
+                this.Gain -= data.getTwoStopsDistance(this.FirstRoute.getStop(this.I - 1), this.FirstRoute.getStop(this.I));
             }
         }
         else {
-            this.Gain += data.getTwoStopsDistance(this.SecondSequence[this.J + this.Degree], this.FirstSequence[this.I]);
+            this.Gain += data.getTwoStopsDistance(this.SecondRoute.getStop(this.J + this.Degree), this.FirstRoute.getStop(this.I));
             if (this.I == 0) {
-                this.Gain += data.getDepotToStopDistance(this.SecondSequence[this.J]);
-                this.Gain -= data.getDepotToStopDistance(this.FirstSequence[this.I]);
+                this.Gain += data.getDepotToStopDistance(this.SecondRoute.getStop(this.J));
+                this.Gain -= data.getDepotToStopDistance(this.FirstRoute.getStop(this.I));
             }
             else {
-                this.Gain += data.getTwoStopsDistance(this.FirstSequence[this.I - 1], this.SecondSequence[this.J]);
-                this.Gain -= data.getTwoStopsDistance(this.FirstSequence[this.I - 1], this.FirstSequence[this.I]);
+                this.Gain += data.getTwoStopsDistance(this.FirstRoute.getStop(this.I - 1), this.SecondRoute.getStop(this.J));
+                this.Gain -= data.getTwoStopsDistance(this.FirstRoute.getStop(this.I - 1), this.FirstRoute.getStop(this.I));
             }
         }
         if (this.J > 0 || this.OneSequence)
-            this.Gain -= data.getTwoStopsDistance(this.SecondSequence[this.J - 1], this.SecondSequence[this.J]);
+            this.Gain -= data.getTwoStopsDistance(this.SecondRoute.getStop(this.J - 1), this.SecondRoute.getStop(this.J));
         else
-            this.Gain -= data.getDepotToStopDistance(this.SecondSequence[this.J]);
+            this.Gain -= data.getDepotToStopDistance(this.SecondRoute.getStop(this.J));
         if (this.J + this.Degree + 1 < this.Border) {
             if (this.J > 0 || this.OneSequence)
-                this.Gain += data.getTwoStopsDistance(this.SecondSequence[this.J - 1], this.SecondSequence[this.J + this.Degree + 1]);
+                this.Gain += data.getTwoStopsDistance(this.SecondRoute.getStop(this.J - 1), this.SecondRoute.getStop(this.J + this.Degree + 1));
             else
-                this.Gain += data.getDepotToStopDistance(this.SecondSequence[this.J + this.Degree + 1]);
-            this.Gain -= data.getTwoStopsDistance(this.SecondSequence[this.J + this.Degree], this.SecondSequence[this.J + this.Degree + 1]);
+                this.Gain += data.getDepotToStopDistance(this.SecondRoute.getStop(this.J + this.Degree + 1));
+            this.Gain -= data.getTwoStopsDistance(this.SecondRoute.getStop(this.J + this.Degree), this.SecondRoute.getStop(this.J + this.Degree + 1));
         }
         else {
             if (this.J > 0 || this.OneSequence)
-                this.Gain += data.getStopToDepotDistance(this.SecondSequence[this.J - 1]);
-            this.Gain -= data.getStopToDepotDistance(this.SecondSequence[this.J + this.Degree]);
+                this.Gain += data.getStopToDepotDistance(this.SecondRoute.getStop(this.J - 1));
+            this.Gain -= data.getStopToDepotDistance(this.SecondRoute.getStop(this.J + this.Degree));
         }
     }
 
     @Override
-    public void Perform() {
-        if (this.OneSequence)
-            IntStream.range(0, this.Degree + 1).forEach(i -> new Move(this.With2Opt ? this.I : this.I + i, this.J + i)
-                                                .RightShift(this.FirstSequence));
+    public void Perform(InputData data) {
+        if (this.OneSequence) {
+            IntStream.range(0, this.Degree + 1)
+                     .forEach(i -> new Move(this.With2Opt ? this.I : this.I + i, this.J + i).RightShift(this.FirstRoute.getSequence()));
+            this.FirstRoute.Improve(this.Gain);
+        }
         else {
-            int[] seq1 = new int[this.FirstSequence.length + this.Degree + 1];
-            IntStream.range(0, this.I).forEach(i -> seq1[i] = this.FirstSequence[i]);
-            IntStream.range(0, this.Degree + 1).forEach(i -> seq1[this.I + i] = this.SecondSequence[(this.With2Opt) ? this.J + this.Degree - i : this.J + i]);
-            IntStream.range(this.I, this.FirstSequence.length).forEach(i -> seq1[i + this.Degree + 1] = this.FirstSequence[i]);
-            int[] seq2 = new int[this.SecondSequence.length - this.Degree - 1];
-            this.FirstSequence = seq1;
-            IntStream.range(0, this.J).forEach(i -> seq2[i] = this.SecondSequence[i]);
-            IntStream.range(this.J + this.Degree + 1, this.SecondSequence.length).forEach(i -> seq2[i - this.Degree - 1] = this.SecondSequence[i]);
-            this.SecondSequence = seq2;
+            int[] seq1 = new int[this.FirstRoute.getLength() + this.Degree + 1];
+            IntStream.range(0, this.I).forEach(i -> seq1[i] = this.FirstRoute.getStop(i));
+            IntStream.range(0, this.Degree + 1).forEach(i -> seq1[this.I + i] = this.SecondRoute.getStop(this.With2Opt ? this.J + this.Degree - i : this.J + i));
+            IntStream.range(this.I, this.FirstRoute.getLength()).forEach(i -> seq1[i + this.Degree + 1] = this.FirstRoute.getStop(i));
+            int[] seq2 = new int[this.SecondRoute.getLength() - this.Degree - 1];
+            IntStream.range(0, this.J).forEach(i -> seq2[i] = this.SecondRoute.getStop(i));
+            IntStream.range(this.J + this.Degree + 1, this.SecondRoute.getLength()).forEach(i -> seq2[i - this.Degree - 1] = this.SecondRoute.getStop(i));
+            this.FirstRoute = seq1.length > 0 ? new Route(data, seq1) : null;
+            this.SecondRoute = seq2.length > 0 ? new Route(data, seq2) : null;
         }
     }
 
@@ -91,12 +94,12 @@ public class RightShift extends LocalSearchMove {
         if (this.OneSequence)
             return true;
         int available_capacity = data.getCapacity() - IntStream.range(0, this.FirstBorder)
-                                                                .map(i -> data.getDemand(this.FirstSequence[i]))
+                                                                .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
                                                                 .sum();
         int sum_demand = IntStream.range(this.J, this.J + this.Degree + 1)
-                                    .map(i -> data.getDemand(this.SecondSequence[i]))
-                                    .sum();
-        return sum_demand <= available_capacity;
+                                 .map(i -> data.getDemand(this.SecondRoute.getStop(i)))
+                                 .sum();
+        return sum_demand <= available_capacity && this.SecondRoute.getSumDemand() - sum_demand <= data.getCapacity();
     }
 
     @Override

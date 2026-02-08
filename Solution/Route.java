@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /*
  * To change this template, choose Tools | Templates
@@ -59,8 +60,8 @@ public final class Route implements Comparable<Route> {
             this.SumDemand += data.getDemand(this.Sequence[i]);
             this.TraveledDistance += data.getTwoStopsDistance(this.Sequence[i], this.Sequence[++i]);
         }
-        this.SumDemand += data.getDemand(this.Sequence[i]);
         this.TraveledDistance += data.getStopToDepotDistance(this.Sequence[i]);
+        this.SumDemand += data.getDemand(this.Sequence[i]);
     }
     
     public boolean StagnationBreaker(InputData data) {
@@ -69,39 +70,38 @@ public final class Route implements Comparable<Route> {
             LocalSearchMove best_lsm = null;
             for (int j = i + 1; j < this.Sequence.length; j++) {   
                 if (j > i + 1) {
-                    LocalSearchMove lsm = new Swap(data, i, j, this.Sequence);
+                    LocalSearchMove lsm = new Swap(data, i, j, this);
                     lsm.setGain(data);
                     if (best_lsm == null || lsm.getGain() < best_lsm.getGain())
                         best_lsm = lsm;
                 }
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max && j + degree < this.Sequence.length; degree++) {
-                    LocalSearchMove lsm1 = new RightShift(data, true, degree, i, j, this.Sequence);
+                    LocalSearchMove lsm1 = new RightShift(data, true, degree, i, j, this);
                     lsm1.setGain(data);
                     if (best_lsm == null || lsm1.getGain() < best_lsm.getGain())
                         best_lsm = lsm1;
                     if (degree == 0)
                         continue;
-                    LocalSearchMove lsm2 = new RightShift(data, false, degree, i, j, this.Sequence);
+                    LocalSearchMove lsm2 = new RightShift(data, false, degree, i, j, this);
                     lsm2.setGain(data);
                     if (best_lsm == null || lsm2.getGain() < best_lsm.getGain())
                         best_lsm = lsm2;
                 }
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max && i - degree >= 0; degree++) {
-                    LocalSearchMove lsm1 = new LeftShift(data, true, degree, i, j, this.Sequence);
+                    LocalSearchMove lsm1 = new LeftShift(data, true, degree, i, j, this);
                     lsm1.setGain(data);
                     if (best_lsm == null || lsm1.getGain() < best_lsm.getGain())
                         best_lsm = lsm1;
                     if (degree == 0)
                         continue;
-                    LocalSearchMove lsm2 = new LeftShift(data, false, degree, i, j, this.Sequence);
+                    LocalSearchMove lsm2 = new LeftShift(data, false, degree, i, j, this);
                     lsm2.setGain(data);
                     if (best_lsm == null || lsm2.getGain() < best_lsm.getGain())
                         best_lsm = lsm2;
                 }
             }          
             if (best_lsm != null && best_lsm.getGain() < 0d) {
-                best_lsm.Perform();
-                this.TraveledDistance += best_lsm.getGain();
+                best_lsm.Perform(data);
                 return true;
             }
         }
@@ -119,11 +119,10 @@ public final class Route implements Comparable<Route> {
         int improvementCounter = 0;
         for (int i = 0; improvementCounter < max && i < this.Sequence.length - 1; i++)
             for (int j = i + 1; improvementCounter < max && j < this.Sequence.length ; j++) {
-                LocalSearchMove lsm = new _2Opt(data, i , j, this.Sequence);
+                LocalSearchMove lsm = new _2Opt(data, i , j, this);
                 lsm.setGain(data);
                 if (lsm.getGain() < 0d) {
-                    lsm.Perform();
-                    this.TraveledDistance += lsm.getGain();
+                    lsm.Perform(data);
                     improvementCounter++;
                 }
             }
@@ -136,21 +135,21 @@ public final class Route implements Comparable<Route> {
         LocalSearchMove lsm;
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
-                lsm = new _2Opt(data, i , j, this.Sequence, other.Sequence);
+                lsm = new _2Opt(data, i , j, this, other);
                 lsm.setGain(data);
                 if (lsm.getGain() < 0d && lsm.isFeasible(data))
                     return lsm;
             }
         for (int i = 0; i < other.Sequence.length; i++)
             for (int j = 0; j < this.Sequence.length ; j++) {
-                lsm = new _2Opt(data, i , j, other.Sequence, this.Sequence);
+                lsm = new _2Opt(data, i , j, other, this);
                 lsm.setGain(data);
                 if (lsm.getGain() < 0d && lsm.isFeasible(data))
                     return lsm;
             }
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
-                lsm = new Swap(data, i, j, this.Sequence, other.Sequence);
+                lsm = new Swap(data, i, j, this, other);
                 if (lsm.isFeasible(data)) {
                     lsm.setGain(data);
                     if (lsm.getGain() < 0d)
@@ -162,43 +161,43 @@ public final class Route implements Comparable<Route> {
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max2 && j + degree < other.Sequence.length; degree++) {
-                    lsm = new RightShift(data, true, degree, i, j, this.Sequence, other.Sequence);
+                    lsm = new RightShift(data, true, degree, i, j, this, other);
                     if (lsm.isFeasible(data)) {
                         lsm.setGain(data);
                         if (lsm.getGain() < 0d)
                             return lsm;
                     }
-                    else
+                    else if (other.getSumDemand() <= data.getCapacity())
                         break;
                     if (degree == 0)
                         continue;
-                    lsm = new RightShift(data, false, degree, i, j, this.Sequence, other.Sequence);
+                    lsm = new RightShift(data, false, degree, i, j, this, other);
                     if (lsm.isFeasible(data)) {
                         lsm.setGain(data);
                         if (lsm.getGain() < 0d)
                             return lsm;
                     }
-                    else
+                    else if (other.getSumDemand() <= data.getCapacity())
                         break;
                 }
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max1 && i - degree >= 0; degree++) {
-                    lsm = new LeftShift(data, true, degree, i, j, this.Sequence, other.Sequence);
+                    lsm = new LeftShift(data, true, degree, i, j, this, other);
                     if (lsm.isFeasible(data)) {
                         lsm.setGain(data);
                         if (lsm.getGain() < 0d)
                             return lsm;
                     }
-                    else
+                    else if (this.getSumDemand() <= data.getCapacity())
                         break;
                     if (degree == 0)
                         continue;
-                    lsm = new LeftShift(data, false, degree, i, j, this.Sequence, other.Sequence);
+                    lsm = new LeftShift(data, false, degree, i, j, this, other);
                     if (lsm.isFeasible(data)) {
                         lsm.setGain(data);
                         if (lsm.getGain() < 0d)
                             return lsm;
                     }
-                    else
+                    else if (this.getSumDemand() <= data.getCapacity())
                         break;
                 }
             }
@@ -215,8 +214,8 @@ public final class Route implements Comparable<Route> {
         return Arrays.toString(IntStream.of(this.Sequence).map(stop -> stop + 2).toArray());
     }
     
-    public Set<Integer> getStops() {
-        return IntStream.of(this.Sequence).boxed().collect(Collectors.toSet());
+    public Stream<Integer> getStops() {
+        return IntStream.of(this.Sequence).boxed();
     }
     
     public int getFirst() {
@@ -252,5 +251,9 @@ public final class Route implements Comparable<Route> {
 
     public int getLength() {
         return this.Sequence.length;
+    }
+
+    public void Improve(double gain) {
+        this.TraveledDistance += gain;
     }
 }

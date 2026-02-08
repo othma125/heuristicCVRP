@@ -142,6 +142,10 @@ public class InputData {
         return this.Capacity;
     }
 
+//    public int getDepotId() {
+//        return this.DepotId;
+//    }
+
     public int getDemand(int stop) {
         return this.Demands[stop + 1];
     }

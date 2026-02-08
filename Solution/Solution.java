@@ -16,8 +16,8 @@ import java.util.stream.IntStream;
  */
 public final class Solution implements Comparable<Solution> {
     
-    private Set<Route> Routes;
-    private Set<Integer> Stops;
+    private final Set<Route> Routes;
+    private final Set<Integer> Stops;
     private double TotalDistance;
 
     Solution(double distance, int capacity) {
@@ -36,7 +36,7 @@ public final class Solution implements Comparable<Solution> {
 
     void add(Route new_route) {
         this.Routes.add(new_route);
-        this.Stops.addAll(new_route.getStops());
+        new_route.getStops().forEach(this.Stops::add);
     }
     
     void LocalSearch(InputData data) {
@@ -54,7 +54,8 @@ public final class Solution implements Comparable<Solution> {
 
     int[] getNewSequence() {
         return this.Routes.stream()
-                            .flatMapToInt(r -> IntStream.of(r.getSequence()))
+                            .map(Route::getSequence)
+                            .flatMapToInt(IntStream::of)
                             .toArray();
     }
 

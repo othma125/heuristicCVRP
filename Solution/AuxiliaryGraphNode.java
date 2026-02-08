@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AuxiliaryGraphNode {
 
     private Solution BestSolution = null;
+    private Solution OldSolution;
     private double Label = Double.POSITIVE_INFINITY;
     final int NodeIndex;
     final ReentrantLock Lock = new ReentrantLock();
@@ -25,22 +26,22 @@ public class AuxiliaryGraphNode {
             this.Label = 0d;
     }
 
-    boolean UpdateLabel(Solution solution, Route new_route) {
+    boolean UpdateLabel(Solution old_solution, Route new_route) {
         if (new_route == null)
             return false;
         boolean c = false;
         this.Lock.lock();
         try {
-            double label = (solution == null ? 0d : solution.getTotalDistance()) + new_route.getTraveledDistance();
+            double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                Solution new_solution = new Solution(this.Label, solution == null ? 1 : solution.getRoutes().size() + 1);
-                if(solution != null)
-                    for(Route route : solution.getRoutes())
-                        new_solution.add(route);
-                new_solution.add(new_route);
-                this.BestSolution = new_solution;
+                this.OldSolution = old_solution;
+                this.BestSolution = new Solution(this.Label, this.OldSolution == null ? 1 : this.OldSolution.getRoutes().size() + 1);
+                if(this.OldSolution != null)
+                    for(Route route : this.OldSolution.getRoutes())
+                        this.BestSolution.add(route);
+                this.BestSolution.add(new_route);
             }
         } finally {
             this.Lock.unlock();
@@ -48,20 +49,20 @@ public class AuxiliaryGraphNode {
         return c;
     }
 
-    boolean UpdateLabel(Solution solution, Route old_route, Route new_route) {
+    boolean UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
         if (new_route == null)
             return false;
         boolean c = false;
         this.Lock.lock();
         try {
-            double label = solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
+            double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                Solution new_solution = new Solution(this.Label, solution.getRoutes().size());
-                for (Route route : solution.getRoutes())
-                    new_solution.add(route == old_route ? new_route : route);
-                this.BestSolution = new_solution;
+                this.OldSolution = old_solution;
+                this.BestSolution = new Solution(this.Label, this.OldSolution.getRoutes().size());
+                for (Route route : this.OldSolution.getRoutes())
+                    this.BestSolution.add(route.equals(old_route) ? new_route : route);
             }
         } finally {
             this.Lock.unlock();
@@ -69,24 +70,26 @@ public class AuxiliaryGraphNode {
         return c;
     }
 
-    boolean UpdateLabel(Solution solution, Route old_route, Route route1, Route route2) {
-        if (route1 == null || route2 == null)
-            return this.UpdateLabel(solution, old_route, route1 == null ? route2 : route1);
+    boolean UpdateLabel(Solution old_solution, Route old_route, Route route1, Route route2) {
+        if (route1 == null)
+            return this.UpdateLabel(old_solution, old_route, route2);
+        else if (route2 == null)
+            return this.UpdateLabel(old_solution, old_route, route1);
         boolean c = false;
         this.Lock.lock();
         try {
-            double label = solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
+            double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                Solution new_solution = new Solution(this.Label, solution.getRoutes().size() + 1);
-                solution.getRoutes()
-                        .stream()
-                        .filter(route -> route != old_route)
-                        .forEach(new_solution::add);
-                new_solution.add(route1);
-                new_solution.add(route2);
-                this.BestSolution = new_solution;
+                this.OldSolution = old_solution;
+                this.BestSolution = new Solution(this.Label, this.OldSolution.getRoutes().size() + 1);
+                this.OldSolution.getRoutes()
+                                .stream()
+                                .filter(route -> !route.equals(old_route))
+                                .forEach(this.BestSolution::add);
+                this.BestSolution.add(route1);
+                this.BestSolution.add(route2);
             }
         } finally {
             this.Lock.unlock();
@@ -103,13 +106,17 @@ public class AuxiliaryGraphNode {
         return this.BestSolution;
     }
 
+    Solution getOldSolution() {
+        return this.OldSolution;
+    }
+
     @Override
     public String toString() {
         return this.isFeasible() ? this.BestSolution.toString() : "NULL";
     }
 
     boolean isFeasible() {
-        return Double.isFinite(this.Label);
+         return this.BestSolution != null;
     }
 
     int[] getNewSequence() {
@@ -135,6 +142,7 @@ public class AuxiliaryGraphNode {
     }
 
     double getLabel() {
-        return this.Label;
+//        return this.Label;
+        return this.isFeasible() ? this.BestSolution.getTotalDistance() : Double.POSITIVE_INFINITY;
     }
 }

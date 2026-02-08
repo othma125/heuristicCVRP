@@ -29,13 +29,19 @@ public class GiantTour implements Comparable<GiantTour> {
     public GiantTour(InputData data, GiantTour ... giant_tours) {
         double bound = Stream.of(giant_tours).filter(GiantTour::isFeasible)
                                             .mapToDouble(GiantTour::getFitness)
-                                            .min()
+                                            .max()
                                             .getAsDouble();
-        AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
-        if (graph.isFeasible()) {
-            this.AuxiliaryGraph = graph;
-            this.Sequence = this.AuxiliaryGraph.getNewSequence();
-            this.Split(data, this.getFitness(), true);
+        if (giant_tours.length > 1) {
+            AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
+            if (graph.isFeasible()) {
+                this.AuxiliaryGraph = graph;
+                this.Sequence = this.AuxiliaryGraph.getNewSequence();
+                this.Split(data, this.getFitness(), true);
+            }
+        }
+        else {
+            this.Sequence = giant_tours[0].Sequence.clone();
+            this.Split(data, bound, true);
         }
     }
     
@@ -43,10 +49,11 @@ public class GiantTour implements Comparable<GiantTour> {
         this.Split(data, Double.POSITIVE_INFINITY, false);
     }
     
-    public void Split(InputData data, double bound, boolean lsm) {
+    private void Split(InputData data, double bound, boolean lsm) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, lsm, this);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
+//            this.AuxiliaryGraph.LocalSearch(data);
             this.setNewSequence();
         }
     }
@@ -90,8 +97,10 @@ public class GiantTour implements Comparable<GiantTour> {
     }
 
     private void setNewSequence() {
-        if (this.isFeasible())
-            this.Sequence = this.AuxiliaryGraph.getNewSequence();
+//        int length = this.Sequence.length;
+        this.Sequence = this.AuxiliaryGraph.getNewSequence();
+//        if (this.Sequence.length != length)
+//            System.exit(0);
     }
 
     @Override
@@ -104,23 +113,24 @@ public class GiantTour implements Comparable<GiantTour> {
     }
     
     public void export(InputData data) throws IOException {
-        String instanceName = new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
-
+        String instanceName = new File(data.FileName).getName().replaceFirst("\\.vrp$", ""); 
         File baseDir = new File("Output");
         File instanceDir = new File(baseDir, instanceName);
-        instanceDir.mkdirs();
-
-        String fileName =
-                "Instance = " + instanceName +
-                "_Cost = " + (int) this.getFitness() + ".sol";
-
-        File outFile = new File(instanceDir, fileName);
-
+        instanceDir.mkdirs(); 
+        String fileName = "Instance = " + instanceName + " Cost = " + (int) this.getFitness() + ".sol"; 
+        File outFile = new File(instanceDir, fileName); 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(outFile))) {
             bw.write(this.export());
             bw.newLine();
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }
+    }
+
+    int indexOf(int stop) {
+        int index = 0;
+        while (this.Sequence[index] != stop)
+            index++;
+        return index;
     }
 }
