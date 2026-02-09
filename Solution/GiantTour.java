@@ -53,7 +53,6 @@ public class GiantTour implements Comparable<GiantTour> {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, lsm, this);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
-//            this.AuxiliaryGraph.LocalSearch(data);
             this.setNewSequence();
         }
     }
@@ -90,17 +89,9 @@ public class GiantTour implements Comparable<GiantTour> {
     public boolean isFeasible() {
         return this.AuxiliaryGraph == null ? false : this.AuxiliaryGraph.isFeasible();
     }
-    
-    public void LocalSearch(InputData data) {
-        if (this.AuxiliaryGraph != null && this.isFeasible())
-            this.AuxiliaryGraph.LocalSearch(data);
-    }
 
     private void setNewSequence() {
-//        int length = this.Sequence.length;
         this.Sequence = this.AuxiliaryGraph.getNewSequence();
-//        if (this.Sequence.length != length)
-//            System.exit(0);
     }
 
     @Override
@@ -125,12 +116,5 @@ public class GiantTour implements Comparable<GiantTour> {
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }
-    }
-
-    int indexOf(int stop) {
-        int index = 0;
-        while (this.Sequence[index] != stop)
-            index++;
-        return index;
     }
 }

@@ -39,11 +39,6 @@ public final class Solution implements Comparable<Solution> {
         new_route.getStops().forEach(this.Stops::add);
     }
     
-    void LocalSearch(InputData data) {
-        this.Routes.forEach(r -> r.LocalSearch(data));
-        this.TotalDistance = this.Routes.stream().mapToDouble(Route::getTraveledDistance).sum();
-    }
-    
     Set<Route> getRoutes() {
         return this.Routes;
     }

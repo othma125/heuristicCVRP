@@ -15,7 +15,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AuxiliaryGraphNode {
 
     private Solution BestSolution = null;
-    private Solution OldSolution;
     private double Label = Double.POSITIVE_INFINITY;
     final int NodeIndex;
     final ReentrantLock Lock = new ReentrantLock();
@@ -36,10 +35,9 @@ public class AuxiliaryGraphNode {
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                this.OldSolution = old_solution;
-                this.BestSolution = new Solution(this.Label, this.OldSolution == null ? 1 : this.OldSolution.getRoutes().size() + 1);
-                if(this.OldSolution != null)
-                    for(Route route : this.OldSolution.getRoutes())
+                this.BestSolution = new Solution(this.Label, old_solution == null ? 1 : old_solution.getRoutes().size() + 1);
+                if(old_solution != null)
+                    for(Route route : old_solution.getRoutes())
                         this.BestSolution.add(route);
                 this.BestSolution.add(new_route);
             }
@@ -59,9 +57,8 @@ public class AuxiliaryGraphNode {
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                this.OldSolution = old_solution;
-                this.BestSolution = new Solution(this.Label, this.OldSolution.getRoutes().size());
-                for (Route route : this.OldSolution.getRoutes())
+                this.BestSolution = new Solution(this.Label, old_solution.getRoutes().size());
+                for (Route route : old_solution.getRoutes())
                     this.BestSolution.add(route.equals(old_route) ? new_route : route);
             }
         } finally {
@@ -82,12 +79,11 @@ public class AuxiliaryGraphNode {
             if (label < this.Label) {
                 c = Double.isFinite(this.Label);
                 this.Label = label;
-                this.OldSolution = old_solution;
-                this.BestSolution = new Solution(this.Label, this.OldSolution.getRoutes().size() + 1);
-                this.OldSolution.getRoutes()
-                                .stream()
-                                .filter(route -> !route.equals(old_route))
-                                .forEach(this.BestSolution::add);
+                this.BestSolution = new Solution(this.Label, old_solution.getRoutes().size() + 1);
+                old_solution.getRoutes()
+                            .stream()
+                            .filter(route -> !route.equals(old_route))
+                            .forEach(this.BestSolution::add);
                 this.BestSolution.add(route1);
                 this.BestSolution.add(route2);
             }
@@ -96,18 +92,9 @@ public class AuxiliaryGraphNode {
         }
         return c;
     }
-    
-    void LocalSearch(InputData data) {
-        if (this.isFeasible())
-            this.getBestSolution().LocalSearch(data);
-    }
 
     Solution getBestSolution() {
         return this.BestSolution;
-    }
-
-    Solution getOldSolution() {
-        return this.OldSolution;
     }
 
     @Override

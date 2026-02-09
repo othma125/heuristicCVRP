@@ -248,10 +248,6 @@ public class AuxiliaryGraph {
     String export() {
         return this.getLastNode().export();
     }
-    
-    void LocalSearch(InputData data) {
-        this.getLastNode().LocalSearch(data);
-    }
 
     int[] getNewSequence() {
         return this.getLastNode().getNewSequence();
