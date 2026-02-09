@@ -6,7 +6,6 @@
 package Solution.LSM;
 
 import Data.InputData;
-import Solution.Move;
 import Solution.Route;
 import java.util.stream.IntStream;
 
@@ -75,17 +74,15 @@ public class Swap extends LocalSearchMove {
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
-            new Move(this.I, this.J).Swap(this.FirstRoute.getSequence());
+            this.FirstRoute.Swap(this.I, this.J);
             this.FirstRoute.Improve(this.Gain);
         }
         else {
             int[] seq1 = this.FirstRoute.getSequence().clone();
             int[] seq2 = this.SecondRoute.getSequence().clone();
-
-            int tmp = seq1[this.I];
+            int aux = seq1[this.I];
             seq1[this.I] = seq2[this.J];
-            seq2[this.J] = tmp;
-
+            seq2[this.J] = aux;
             this.FirstRoute = new Route(data, seq1);
             this.SecondRoute = new Route(data, seq2);
         }

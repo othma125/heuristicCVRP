@@ -6,7 +6,6 @@
 package Solution.LSM;
 
 import Data.InputData;
-import Solution.Move;
 import Solution.Route;
 import java.util.stream.IntStream;
 
@@ -46,7 +45,7 @@ public class _2Opt extends LocalSearchMove {
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
-            new Move(this.I, this.J)._2Opt(this.FirstRoute.getSequence());
+            this.FirstRoute._2Opt(this.I, this.J);
             this.FirstRoute.Improve(this.Gain);
         }
         else {

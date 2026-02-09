@@ -32,7 +32,7 @@ public class benchmark {
      */
 
     public static void main(String[] args) {
-        String benchmarkDirPath = "CVRPLib//A";
+        String benchmarkDirPath = "CVRPLib//B";
         File dir = new File(benchmarkDirPath);
         File[] files = dir.listFiles();
         if (files == null) {

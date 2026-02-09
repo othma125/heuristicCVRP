@@ -6,7 +6,6 @@
 package Solution.LSM;
 
 import Data.InputData;
-import Solution.Move;
 import Solution.Route;
 import java.util.stream.IntStream;
 
@@ -17,19 +16,19 @@ import java.util.stream.IntStream;
 public class RightShift extends LocalSearchMove {
 
     private final int Degree;
-    private final boolean With2Opt;
+    private final boolean with2Opt;
     private final int FirstBorder;
 
     public RightShift(InputData data, boolean with2opt, int degree, int i, int j, Route... routes) {
         super("RightShift", i, j, routes);
-        this.With2Opt = with2opt;
+        this.with2Opt = with2opt;
         this.Degree = degree;
         this.FirstBorder = this.FirstRoute.getLength();
     }
 
     @Override
     public void setGain(InputData data) {
-        if (this.With2Opt) {
+        if (this.with2Opt) {
             this.Gain += data.getTwoStopsDistance(this.SecondRoute.getStop(this.J), this.FirstRoute.getStop(this.I));
             if (this.I == 0) {
                 this.Gain += data.getDepotToStopDistance(this.SecondRoute.getStop(this.J + this.Degree));
@@ -72,14 +71,13 @@ public class RightShift extends LocalSearchMove {
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
-            IntStream.range(0, this.Degree + 1)
-                     .forEach(i -> new Move(this.With2Opt ? this.I : this.I + i, this.J + i).RightShift(this.FirstRoute.getSequence()));
+            this.FirstRoute.RightShift(this.I, this.J, this.Degree, this.with2Opt);
             this.FirstRoute.Improve(this.Gain);
         }
         else {
             int[] seq1 = new int[this.FirstRoute.getLength() + this.Degree + 1];
             IntStream.range(0, this.I).forEach(i -> seq1[i] = this.FirstRoute.getStop(i));
-            IntStream.range(0, this.Degree + 1).forEach(i -> seq1[this.I + i] = this.SecondRoute.getStop(this.With2Opt ? this.J + this.Degree - i : this.J + i));
+            IntStream.range(0, this.Degree + 1).forEach(i -> seq1[this.I + i] = this.SecondRoute.getStop(this.with2Opt ? this.J + this.Degree - i : this.J + i));
             IntStream.range(this.I, this.FirstRoute.getLength()).forEach(i -> seq1[i + this.Degree + 1] = this.FirstRoute.getStop(i));
             int[] seq2 = new int[this.SecondRoute.getLength() - this.Degree - 1];
             IntStream.range(0, this.J).forEach(i -> seq2[i] = this.SecondRoute.getStop(i));
@@ -106,7 +104,7 @@ public class RightShift extends LocalSearchMove {
     public String toString() {
         if (this.Degree == 0)
             return this.Name + " (" + this.I + ";" + this.J + ")";
-        else if (this.With2Opt)
+        else if (this.with2Opt)
             return this.Name + " (" + this.I + ";" + this.J + ") " + -this.Degree;
         return this.Name + " (" + this.I + ";" + this.J + ") " + this.Degree;
     }

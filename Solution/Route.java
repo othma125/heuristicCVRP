@@ -256,4 +256,20 @@ public final class Route implements Comparable<Route> {
     public void Improve(double gain) {
         this.TraveledDistance += gain;
     }
+    
+    public void Swap(int i, int j) {
+        new Move(i, j).Swap(this.Sequence);
+    }
+    
+    public void _2Opt(int i, int j) {
+        new Move(i, j)._2Opt(this.Sequence);
+    }
+    
+    public void LeftShift(int i, int j, int degree, boolean _2opt) {
+        IntStream.range(0, degree + 1).forEach(k -> new Move(i - k, _2opt ? j : j - k).LeftShift(this.Sequence));
+    }
+    
+    public void RightShift(int i, int j, int degree, boolean _2opt) {
+        IntStream.range(0, degree + 1).forEach(k -> new Move(_2opt ? i : i + k, j + k).RightShift(this.Sequence));
+    }
 }
