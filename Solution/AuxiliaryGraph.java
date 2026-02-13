@@ -115,6 +115,8 @@ public class AuxiliaryGraph {
                     return false;
                 return this.Solution.getRoutes().size() == other.Solution.getRoutes().size();
             }
+            else if ((this.Solution != null && other.Solution == null) || (this.Solution == null && other.Solution != null))
+                 return false;
             return true;
         }
 
