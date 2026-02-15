@@ -43,6 +43,10 @@ public final class Solution implements Comparable<Solution> {
         return this.Routes;
     }
 
+    int getRoutesCount() {
+        return this.Routes.size();
+    }
+
     public double getTotalDistance() {
         return this.TotalDistance;
     }

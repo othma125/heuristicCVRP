@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 public class InputData {
     public final String FileName;
     private int Dimension;
+    public int MaxVehicleNumber;
     private ConcurrentMap<Edge, Integer> DistanceMap;
     private int Capacity = -1;
     private int DepotId = -1;
@@ -18,6 +19,7 @@ public class InputData {
     
     public InputData(String file) throws IOException {
         this.FileName = file;
+        this.MaxVehicleNumber = Integer.MAX_VALUE;
         try (BufferedReader br = new BufferedReader(new FileReader(this.FileName))) {
             String line;
             String section = "";
@@ -33,6 +35,14 @@ public class InputData {
                     this.Abscissas = new double[this.Dimension];
                     this.Ordinates = new double[this.Dimension];
                     this.Demands = new int[this.Dimension];
+                }
+                else if (upper.startsWith("NAME")) {
+                    String name = line.split(":")[1].trim();
+                    String[] nameParts = name.split("-");
+                    if (nameParts.length > 1) {
+                        name = nameParts[nameParts.length - 1].trim();
+                        this.MaxVehicleNumber = Integer.parseInt(name.replaceAll("k", ""));
+                    }
                 }
                 else if (upper.startsWith("CAPACITY"))
                     this.Capacity = Integer.parseInt(line.split(":")[1].trim());
@@ -150,8 +160,16 @@ public class InputData {
         return this.Demands[stop + 1];
     }
 
+    public int getMaxVehicleNumber() {
+        return this.MaxVehicleNumber;
+    }
+
+     /* ======================
+       toString
+       ====================== */
+
     @Override
     public String toString() {
-        return "InputData {" + " Dimension = " + this.Dimension + " }";
+        return "InputData {" + " Dimension = " + this.Dimension + ", MaxVehicleNumber = " + this.MaxVehicleNumber + " }";
     }
 }

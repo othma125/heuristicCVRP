@@ -24,7 +24,11 @@ public final class Route implements Comparable<Route> {
 
     @Override
     public int hashCode() {
-        return 31 * this.Sequence.length + IntStream.of(this.Sequence).sum();
+        int hash = this.Sequence.length;
+        hash = 31 * hash + this.SumDemand;
+        hash = 31 * hash + (int) (this.TraveledDistance * 100);
+        hash = 31 * hash + IntStream.of(this.Sequence).sum();
+        return hash;
     }
 
     @Override
@@ -36,7 +40,9 @@ public final class Route implements Comparable<Route> {
         if (this.getClass() != obj.getClass())
             return false;
         final Route other = (Route) obj;
-        if (this.Sequence.length != other.Sequence.length)
+        if (this.Sequence.length != other.Sequence.length
+            || this.SumDemand != other.SumDemand 
+            || Double.compare(this.TraveledDistance, other.TraveledDistance) != 0)
             return false;
         return IntStream.range(0, this.Sequence.length).allMatch(i -> this.Sequence[i] == other.Sequence[i]);
     }  

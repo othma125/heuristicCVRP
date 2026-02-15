@@ -23,7 +23,7 @@ public class main {
      */
     public static void main(String[] args) throws IOException {
         
-        InputData data = new InputData("CVRPLib//B//B-n51-k7.vrp");
+        InputData data = new InputData("CVRPLib//B//B-n57-k7.vrp");
 //        InputData data = new InputData("CVRPLib//XL//XL-n1048-k237.vrp");
         GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
         algorithm.Run();
@@ -31,7 +31,7 @@ public class main {
         if (algorithm.isFeasible()) {
             GiantTour gt = algorithm.getBestGiantTour();
             System.out.println(gt);
-            // gt.export(data);
+            //gt.export(data);
             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms");
         }
         else

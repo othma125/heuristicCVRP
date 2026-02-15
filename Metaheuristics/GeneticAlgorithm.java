@@ -39,7 +39,9 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if(!this.Population[0].isFeasible())
             return;
         do {
+            long current_time = System.currentTimeMillis();
             IntStream.range(0, this.PopulationSize).forEach(i -> this.Selection());
+            this.StagnationMinTime = System.currentTimeMillis() - current_time;
         } while (this.nonStopCondition());
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
@@ -86,8 +88,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
                 do {
                     failure_count++;
                     this.Population[i] = new GiantTour(this.Data);
-                } while (!this.Population[i].isFeasible() && failure_count < 10);
-                if (failure_count == 10)
+                } while (!this.Population[i].isFeasible() && failure_count < 100);
+                if (failure_count == 100)
                     return;
                 this.setBestSolution(this.Population[i]);
             }

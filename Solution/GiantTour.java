@@ -79,7 +79,7 @@ public class GiantTour implements Comparable<GiantTour> {
     }
 
     public double getFitness() {
-        return this.AuxiliaryGraph == null ? Double.POSITIVE_INFINITY : this.AuxiliaryGraph.getLabel();
+        return this.AuxiliaryGraph == null || !this.AuxiliaryGraph.isFeasible() ? Double.POSITIVE_INFINITY : this.AuxiliaryGraph.getLabel();
     }
 
     public int getRoutesCount() {
