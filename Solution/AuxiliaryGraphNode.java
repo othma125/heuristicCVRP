@@ -59,7 +59,7 @@ public class AuxiliaryGraphNode {
                 this.Label = label;
                 this.BestSolution = new Solution(this.Label, old_solution.getRoutes().size());
                 for (Route route : old_solution.getRoutes())
-                    this.BestSolution.add(route.equals(old_route) ? new_route : route);
+                    this.BestSolution.add(route == old_route ? new_route : route);
             }
         } finally {
             this.Lock.unlock();
@@ -82,7 +82,7 @@ public class AuxiliaryGraphNode {
                 this.BestSolution = new Solution(this.Label, old_solution.getRoutes().size() + 1);
                 old_solution.getRoutes()
                             .stream()
-                            .filter(route -> !route.equals(old_route))
+                            .filter(route -> route != old_route)
                             .forEach(this.BestSolution::add);
                 this.BestSolution.add(route1);
                 this.BestSolution.add(route2);
