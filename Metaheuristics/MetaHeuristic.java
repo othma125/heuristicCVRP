@@ -20,12 +20,12 @@ public abstract class MetaHeuristic {
     long EndTime;
     long BestSolutionReachingTime;
     private GiantTour BestGiantTour = null;
-    public long StagnationMinTime;
+    public final long StagnationMinTime;
 
 
     public MetaHeuristic(InputData data) {
         this.Data = data;
-        // this.StagnationMinTime = (long) Math.max(100, 100 * Math.sqrt(data.getDimension()));
+        this.StagnationMinTime = (long) Math.max(100, 100 * Math.sqrt(data.getDimension()));
     }
 
     public boolean setBestSolution(GiantTour new_gt) {

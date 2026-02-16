@@ -39,9 +39,9 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if(!this.Population[0].isFeasible())
             return;
         do {
-            long current_time = System.currentTimeMillis();
+            // long current_time = System.currentTimeMillis();
             IntStream.range(0, this.PopulationSize).forEach(i -> this.Selection());
-            this.StagnationMinTime = System.currentTimeMillis() - current_time;
+            // this.StagnationMinTime = System.currentTimeMillis() - current_time;
         } while (this.nonStopCondition());
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
@@ -55,7 +55,10 @@ public class GeneticAlgorithm extends MetaHeuristic {
             this.UpdatePopulation(graph_crossover);
         }
         else if (parent1 == parent2) {
-            GiantTour random = new GiantTour(this.Data); 
+            GiantTour random;
+            do {
+                random = new GiantTour(this.Data);
+            } while (!random.isFeasible());
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
             this.UpdatePopulation(graph_crossover); 
         }

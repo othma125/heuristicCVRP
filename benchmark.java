@@ -32,7 +32,7 @@ public class benchmark {
      */
 
     public static void main(String[] args) {
-        String benchmarkDirPath = "CVRPLib//B";
+        String benchmarkDirPath = "CVRPLib//A";
         File dir = new File(benchmarkDirPath);
         File[] files = dir.listFiles();
         if (files == null) {
@@ -91,7 +91,7 @@ public class benchmark {
                         algorithm.Run();
                         if (algorithm.isFeasible()) {
                             GiantTour gt = algorithm.getBestGiantTour();
-//                            System.out.println(gt);
+                            // System.out.println(gt);
                             // gt.export(data);
                             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms\n");
 

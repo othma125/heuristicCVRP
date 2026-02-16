@@ -141,6 +141,7 @@ public class AuxiliaryGraph {
                         EndingNode.UpdateLabel(this.Solution, new_route);
                     }
                 }
+                boolean c = true;
                 if (this.Solution != null)
                     for (Route old_route : this.Solution.getRoutes()) {
                         final int combined_demand = old_route.getSumDemand() + cumulative_demand;
@@ -171,18 +172,17 @@ public class AuxiliaryGraph {
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                             }
                         }
-                        if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity()
+                        else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity()
                             && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
+                            c = false;
                             LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
                             if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
                                 lsm.Perform(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
-                                if (!AuxiliaryGraph.this.LSM)
-                                    break;
                             }
                         }
                     }
-                if (cumulative_demand > AuxiliaryGraph.this.Data.getCapacity()) {
+                if (c && cumulative_demand > AuxiliaryGraph.this.Data.getCapacity()) {
                     this.Break(EndingNode);
                     break;
                 }

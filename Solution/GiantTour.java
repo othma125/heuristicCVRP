@@ -24,6 +24,7 @@ public class GiantTour implements Comparable<GiantTour> {
     public GiantTour(InputData data) {
         this.setRandomGiantTour(data);
         this.Split(data);
+        // System.exit(0);
     }
     
     public GiantTour(InputData data, GiantTour ... giant_tours) {
@@ -35,8 +36,15 @@ public class GiantTour implements Comparable<GiantTour> {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
             if (graph.isFeasible()) {
                 this.AuxiliaryGraph = graph;
-                this.Sequence = this.AuxiliaryGraph.getNewSequence();
+                this.setNewSequence();
                 this.Split(data, this.getFitness(), true);
+            }
+            else {
+                graph = new AuxiliaryGraph(data, bound, true, giant_tours);
+                if (graph.isFeasible()) {
+                    this.AuxiliaryGraph = graph;
+                    this.setNewSequence();
+                }
             }
         }
         else {
@@ -55,13 +63,19 @@ public class GiantTour implements Comparable<GiantTour> {
             this.AuxiliaryGraph = graph;
             this.setNewSequence();
         }
+        else if (!lsm) 
+            this.Split(data, bound, true);
     }
 
     private void setRandomGiantTour(InputData data) {
         this.Sequence = IntStream.range(0, data.getDimension() - 1).toArray();
         int max = this.Sequence.length / 2;
         IntStream.range(0, max)
-                .mapToObj(i -> new Move(i, (int) (Math.random() * this.Sequence.length)))
+                .mapToObj(k -> {
+                    int i = (int) (Math.random() * this.Sequence.length);
+                    int j = (int) (Math.random() * this.Sequence.length);
+                    return new Move(i, j);
+                })
                 .forEach(move -> move.Swap(this.Sequence));
     }
     
@@ -79,7 +93,7 @@ public class GiantTour implements Comparable<GiantTour> {
     }
 
     public double getFitness() {
-        return this.AuxiliaryGraph == null || !this.AuxiliaryGraph.isFeasible() ? Double.POSITIVE_INFINITY : this.AuxiliaryGraph.getLabel();
+        return this.isFeasible() ? this.AuxiliaryGraph.getLabel() : Double.POSITIVE_INFINITY;
     }
 
     public int getRoutesCount() {
