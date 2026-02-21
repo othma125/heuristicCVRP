@@ -38,21 +38,20 @@ public class GeneticAlgorithm extends MetaHeuristic {
         this.InitialPopulation();
         if(!this.Population[0].isFeasible())
             return;
+        boolean c;
         do {
-            // long current_time = System.currentTimeMillis();
-            IntStream.range(0, this.PopulationSize).forEach(i -> this.Selection());
-            // this.StagnationMinTime = System.currentTimeMillis() - current_time;
-        } while (this.nonStopCondition());
+            c = IntStream.range(0, this.PopulationSize).anyMatch(i -> this.Crossover());
+        } while (c || this.nonStopCondition());
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
     }
     
-    private void Selection() {
+    private boolean Crossover() {
         GiantTour parent1 = this.tournamentSelection();
         GiantTour parent2 = this.tournamentSelection();
         if (Math.random() < this.CrossoverRate && parent1 != parent2) {
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, parent2);
-            this.UpdatePopulation(graph_crossover);
+            return this.UpdatePopulation(graph_crossover);
         }
         else if (parent1 == parent2) {
             GiantTour random;
@@ -60,28 +59,32 @@ public class GeneticAlgorithm extends MetaHeuristic {
                 random = new GiantTour(this.Data);
             } while (!random.isFeasible());
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
-            this.UpdatePopulation(graph_crossover); 
+            return this.UpdatePopulation(graph_crossover); 
         }
         else {
             // repeat splitting procedure to discover more improvement possibilities
-            this.UpdatePopulation(new GiantTour(this.Data, parent1));
-            this.UpdatePopulation(new GiantTour(this.Data, parent2));
+            boolean c1 = this.UpdatePopulation(new GiantTour(this.Data, parent1));
+            boolean c2 = this.UpdatePopulation(new GiantTour(this.Data, parent2));
+            return c1 || c2;
         }
     }
     
-    private void UpdatePopulation(GiantTour newGiantTour) {
+    private boolean UpdatePopulation(GiantTour newGiantTour) {
         if (newGiantTour == null || !newGiantTour.isFeasible())
-            return;
+            return false;
+        boolean c = false;
         if (newGiantTour.compareTo(this.getLast()) < 0) {
             int half = this.PopulationSize / 2;
             int randomIndex = half + (int) (Math.random() * (this.Population.length - half));
             if (this.setBestSolution(newGiantTour)) {
+                c = true;
                 GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
                 this.UpdatePopulation(graph_crossover);
             }
             this.Population[randomIndex] = newGiantTour;
             Arrays.sort(this.Population);
         }
+        return c;
     }
     
     private void InitialPopulation() {
