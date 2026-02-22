@@ -88,7 +88,10 @@ public class AuxiliaryGraph {
 
         @Override
         public int hashCode() {
-            return 31 * this.StartingNode.NodeIndex + Double.hashCode(this.GiantTour.getFitness());
+            int hash = 31 * this.StartingNode.NodeIndex;
+            if (Double.isFinite(this.GiantTour.getFitness()))
+                hash += Double.hashCode(this.GiantTour.getFitness());
+            return hash;
         }
 
         @Override
@@ -100,8 +103,7 @@ public class AuxiliaryGraph {
             if (getClass() != obj.getClass())
                 return false;
             final ArcSetter other = (ArcSetter) obj;
-            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex
-                || this.GiantTour.getFitness() != other.GiantTour.getFitness())
+            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex || this.GiantTour != other.GiantTour)
                 return false;
             return true;
         }
@@ -194,7 +196,7 @@ public class AuxiliaryGraph {
         private void Break(AuxiliaryGraphNode node) {
             this.NodeProcessingWith = AuxiliaryGraph.this.Length;
             AuxiliaryGraph.this.ArcsSetters.remove(this);
-            if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
+            if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
                 synchronized (AuxiliaryGraph.this.ArcsSetters) {
                     AuxiliaryGraph.this.ArcsSetters.notifyAll();
                 }
@@ -207,7 +209,7 @@ public class AuxiliaryGraph {
             this.NodeProcessingWith++;
             if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) {
                 AuxiliaryGraph.this.ArcsSetters.remove(this);
-                if (AuxiliaryGraph.this.ArcsSetters.isEmpty() || AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length)) {
+                if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
                     synchronized (AuxiliaryGraph.this.ArcsSetters) {
                         AuxiliaryGraph.this.ArcsSetters.notifyAll();
                     }
