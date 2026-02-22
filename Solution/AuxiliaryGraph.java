@@ -88,10 +88,12 @@ public class AuxiliaryGraph {
 
         @Override
         public int hashCode() {
-            int hash = 31 * this.StartingNode.NodeIndex;
-            if (Double.isFinite(this.GiantTour.getFitness()))
-                hash += Double.hashCode(this.GiantTour.getFitness());
-            return hash;
+            if (AuxiliaryGraph.this.GiantTours.length > 1) {
+                int hash = this.StartingNode.NodeIndex;
+                hash += 31 * Double.hashCode(this.GiantTour.getFitness());
+                return hash;
+            }
+            return this.StartingNode.NodeIndex;
         }
 
         @Override
