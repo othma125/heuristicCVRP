@@ -90,7 +90,7 @@ public class AuxiliaryGraph {
         public int hashCode() {
             if (AuxiliaryGraph.this.GiantTours.length > 1) {
                 int hash = this.StartingNode.NodeIndex;
-                hash += 31 * Double.hashCode(this.GiantTour.getFitness());
+                hash = 31 * hash + Double.hashCode(this.GiantTour.getFitness());
                 return hash;
             }
             return this.StartingNode.NodeIndex;
