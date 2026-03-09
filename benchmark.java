@@ -64,6 +64,10 @@ public class benchmark {
                                                             name -> name,
                                                             name -> {
                                                                 File file = new File(benchmarkDirPath + "//" + name + ".sol");
+                                                                if (!file.exists()) 
+                                                                    file = new File(benchmarkDirPath + "//" + name + ".opt.sol");
+                                                                if (!file.exists()) 
+                                                                    file = new File(benchmarkDirPath + "//" + name + ".bst.sol");
                                                                 try (BufferedReader br = Files.newBufferedReader(file.toPath())) {
                                                                     String line;
                                                                     while ((line = br.readLine()) != null) {

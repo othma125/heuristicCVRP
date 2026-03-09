@@ -40,8 +40,12 @@ public class InputData {
                     String name = line.split(":")[1].trim();
                     String[] nameParts = name.split("-");
                     if (nameParts.length > 1) {
-                        name = nameParts[nameParts.length - 1].trim();
-                        this.MaxVehicleNumber = Integer.parseInt(name.replaceAll("k", ""));
+                        for (String part : nameParts) {
+                            if (part.contains("k")) {
+                                this.MaxVehicleNumber = Integer.parseInt(part.trim().replaceAll("k", ""));
+                                break;
+                            }
+                        }
                     }
                 }
                 else if (upper.startsWith("CAPACITY"))

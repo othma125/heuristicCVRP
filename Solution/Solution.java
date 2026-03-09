@@ -6,6 +6,7 @@
 package Solution;
 
 import Data.InputData;
+import Solution.LSM.LocalSearchMove;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.IntStream;
@@ -24,6 +25,31 @@ public final class Solution implements Comparable<Solution> {
         this.TotalDistance = distance;
         this.Routes = new HashSet<>(capacity, 1f);
         this.Stops = new HashSet<>();
+    }
+
+    void LocalSearch(InputData data) {
+        for (Route r1 : this.Routes) 
+            for (Route r2 : this.Routes) 
+                if (r1 != r2) {
+                    LocalSearchMove lsm = r1.getLSM(data, r2);
+                    if (lsm != null) {
+                        lsm.Perform(data);
+                        this.Routes.remove(r1);
+                        this.TotalDistance -= r1.getTraveledDistance();
+                        this.Routes.remove(r2);
+                        this.TotalDistance -= r2.getTraveledDistance(); 
+                        if (lsm.getFirstRoute() != null) {
+                            this.Routes.add(lsm.getFirstRoute());
+                            this.TotalDistance += lsm.getFirstRoute().getTraveledDistance();
+                        }
+                        if (lsm.getSecondRoute() != null) {
+                            this.Routes.add(lsm.getSecondRoute());
+                            this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
+                        }
+                        this.LocalSearch(data);
+                        return;
+                    }
+                }
     }
     
     int getSize() {

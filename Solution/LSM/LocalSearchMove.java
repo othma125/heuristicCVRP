@@ -48,10 +48,10 @@ public abstract class LocalSearchMove {
     }
 
     public Route getFirstRoute() {
-        return FirstRoute;
+        return this.FirstRoute;
     }
 
     public Route getSecondRoute() {
-        return SecondRoute;
+        return this.SecondRoute;
     }
 }
