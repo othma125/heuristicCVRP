@@ -24,7 +24,6 @@ public class GiantTour implements Comparable<GiantTour> {
     public GiantTour(InputData data) {
         this.setRandomGiantTour(data);
         this.Split(data);
-        // System.exit(0);
     }
     
     public GiantTour(InputData data, GiantTour ... giant_tours) {
@@ -36,14 +35,14 @@ public class GiantTour implements Comparable<GiantTour> {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
             if (graph.isFeasible()) {
                 this.AuxiliaryGraph = graph;
-                this.setNewSequence();
+                this.setNewSequence(data);
                 this.Split(data, this.getFitness(), true);
             }
             else {
                 graph = new AuxiliaryGraph(data, bound, true, giant_tours);
                 if (graph.isFeasible()) {
                     this.AuxiliaryGraph = graph;
-                    this.setNewSequence();
+                    this.setNewSequence(data);
                 }
             }
         }
@@ -61,7 +60,7 @@ public class GiantTour implements Comparable<GiantTour> {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, lsm, this);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
-            this.setNewSequence();
+            this.setNewSequence(data);
         }
         else if (!lsm) 
             this.Split(data, bound, true);
@@ -104,8 +103,8 @@ public class GiantTour implements Comparable<GiantTour> {
         return this.AuxiliaryGraph == null ? false : this.AuxiliaryGraph.isFeasible();
     }
 
-    private void setNewSequence() {
-        this.Sequence = this.AuxiliaryGraph.getNewSequence();
+    private void setNewSequence(InputData data) {
+        this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
     }
 
     @Override

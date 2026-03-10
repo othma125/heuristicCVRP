@@ -118,11 +118,12 @@ public class AuxiliaryGraphNode {
         return this.isFeasible() ? this.getBestSolution().getTotalDistance() : Double.POSITIVE_INFINITY;
     }
 
-    int[] getNewSequence() {
+    int[] getNewSequence(InputData data) {
         if (this.isFeasible()) {
             int[] seq = null;
             this.Lock.lock();
             try {
+                this.getBestSolution().LocalSearch(data);
                 seq = this.getBestSolution().getNewSequence();
             } finally {
                 this.Lock.unlock();

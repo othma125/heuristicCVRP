@@ -32,7 +32,7 @@ public class benchmark {
      */
 
     public static void main(String[] args) {
-        String benchmarkDirPath = "CVRPLib//A";
+        String benchmarkDirPath = "CVRPLib//QOBLIB";
         File dir = new File(benchmarkDirPath);
         File[] files = dir.listFiles();
         if (files == null) {
@@ -64,10 +64,11 @@ public class benchmark {
                                                             name -> name,
                                                             name -> {
                                                                 File file = new File(benchmarkDirPath + "//" + name + ".sol");
-                                                                if (!file.exists()) 
+                                                                if (!file.exists()) {
                                                                     file = new File(benchmarkDirPath + "//" + name + ".opt.sol");
-                                                                if (!file.exists()) 
-                                                                    file = new File(benchmarkDirPath + "//" + name + ".bst.sol");
+                                                                    if (!file.exists()) 
+                                                                        file = new File(benchmarkDirPath + "//" + name + ".bst.sol");
+                                                                }
                                                                 try (BufferedReader br = Files.newBufferedReader(file.toPath())) {
                                                                     String line;
                                                                     while ((line = br.readLine()) != null) {

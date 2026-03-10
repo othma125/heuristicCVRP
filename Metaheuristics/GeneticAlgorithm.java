@@ -106,7 +106,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
                 this.setBestSolution(this.Population[i]);
             }
         Arrays.sort(this.Population);
-        System.out.println();
     }
     
     private boolean nonStopCondition() {

@@ -64,6 +64,7 @@ public class AuxiliaryGraph {
         try {
             if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
                 node.getSolutions().stream()
+                                    // .peek(solution -> solution.LocalSearch(this.Data))
                                     .filter(solution -> solution.getTotalDistance() < AuxiliaryGraph.this.Bound)
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
@@ -73,6 +74,7 @@ public class AuxiliaryGraph {
             node.Lock.unlock();
         }
     }
+
     class ArcSetter implements Callable<Void> {
 
         private final AuxiliaryGraphNode StartingNode;
@@ -112,7 +114,6 @@ public class AuxiliaryGraph {
 
         @Override
         public Void call() {
-            // this.StartingNode.LocalSearch(AuxiliaryGraph.this.Data);
             int i = this.StartingNode.NodeIndex;
             int j = this.StartingNode.NodeIndex;
             int length = 0;
@@ -245,8 +246,8 @@ public class AuxiliaryGraph {
         return this.getLastNode().export();
     }
 
-    int[] getNewSequence() {
-        return this.getLastNode().getNewSequence();
+    int[] getNewSequence(InputData data) {
+        return this.getLastNode().getNewSequence(data);
     }
 
     @Override
