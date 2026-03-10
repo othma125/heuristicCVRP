@@ -123,7 +123,7 @@ public class AuxiliaryGraphNode {
             int[] seq = null;
             this.Lock.lock();
             try {
-                this.getBestSolution().LocalSearch(data);
+                this.getBestSolution().InterLocalSearch(data);
                 seq = this.getBestSolution().getNewSequence();
             } finally {
                 this.Lock.unlock();

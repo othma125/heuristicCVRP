@@ -143,7 +143,7 @@ public class AuxiliaryGraph {
                 if ((this.Solution == null ? 1 : this.Solution.getRoutesCount() + 1) <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()
                     && cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
                     if (AuxiliaryGraph.this.LSM) 
-                        new_route.LocalSearch(AuxiliaryGraph.this.Data);
+                        new_route.IntraLocalSearch(AuxiliaryGraph.this.Data);
                     EndingNode.UpdateLabel(this.Solution, new_route);
                 }
                 boolean c = true;
@@ -160,7 +160,7 @@ public class AuxiliaryGraph {
                                                                 .toArray();
                             Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
                             if (AuxiliaryGraph.this.LSM) 
-                                combined_route1.LocalSearch(AuxiliaryGraph.this.Data);
+                                combined_route1.IntraLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
                             int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
                                                                 .map(index -> {
@@ -171,14 +171,13 @@ public class AuxiliaryGraph {
                                                                 .toArray();
                             Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
                             if (AuxiliaryGraph.this.LSM) 
-                                combined_route2.LocalSearch(AuxiliaryGraph.this.Data);
+                                combined_route2.IntraLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                         }
                         else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                             c = false;
                             LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
-                            if (lsm != null
-                                && (lsm.getFirstRoute() == null || lsm.getSecondRoute() == null || lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel())) {
+                            if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
                                 lsm.Perform(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
                             }

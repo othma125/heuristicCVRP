@@ -96,7 +96,7 @@ public class benchmark {
                         algorithm.Run();
                         if (algorithm.isFeasible()) {
                             GiantTour gt = algorithm.getBestGiantTour();
-                            // System.out.println(gt);
+                            System.out.println(gt);
                             // gt.export(data);
                             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms\n");
 

@@ -27,7 +27,7 @@ public final class Solution implements Comparable<Solution> {
         this.Stops = new HashSet<>();
     }
 
-    void LocalSearch(InputData data) {
+    void InterLocalSearch(InputData data) {
         for (Route r1 : this.Routes) 
             for (Route r2 : this.Routes) 
                 if (r1 != r2) {
@@ -46,7 +46,7 @@ public final class Solution implements Comparable<Solution> {
                             this.Routes.add(lsm.getSecondRoute());
                             this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
                         }
-                        this.LocalSearch(data);
+                        this.InterLocalSearch(data);
                         return;
                     }
                 }
