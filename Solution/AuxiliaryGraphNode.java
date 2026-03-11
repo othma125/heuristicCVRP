@@ -43,31 +43,33 @@ public class AuxiliaryGraphNode {
         }
     }
 
-    void UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
+    void UpdateLabel(InputData data, Solution old_solution, Route old_route, Route new_route) {
         if (new_route == null)
             return;
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
-            Solution newSolution = new Solution(label, old_solution.getRoutes().size());
-            for (Route route : old_solution.getRoutes())
-                newSolution.add(route == old_route ? new_route : route);
-            if (label < this.getLabel())
-                this.Solutions.addFirst(newSolution);
-            else
-                this.Solutions.add(newSolution);
+            if (data.getMaxVehicleNumber() < Integer.MAX_VALUE || label < this.getLabel()) {
+                Solution newSolution = new Solution(label, old_solution.getRoutes().size());
+                for (Route route : old_solution.getRoutes())
+                    newSolution.add(route == old_route ? new_route : route);
+                if (label < this.getLabel())
+                    this.Solutions.addFirst(newSolution);
+                else
+                    this.Solutions.add(newSolution);
+            }
         } finally {
             this.Lock.unlock();
         }
     }
 
-    void UpdateLabel(Solution old_solution, Route old_route, Route route1, Route route2) {
+    void UpdateLabel(InputData data, Solution old_solution, Route old_route, Route route1, Route route2) {
         if (route1 == null) {
-            this.UpdateLabel(old_solution, old_route, route2);
+            this.UpdateLabel(data, old_solution, old_route, route2);
             return;
         }
         else if (route2 == null) {
-            this.UpdateLabel(old_solution, old_route, route1);
+            this.UpdateLabel(data, old_solution, old_route, route1);
             return;
         }
         this.Lock.lock();

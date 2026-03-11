@@ -64,7 +64,7 @@ public class AuxiliaryGraph {
         try {
             if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
                 node.getSolutions().stream()
-                                    // .peek(solution -> solution.LocalSearch(this.Data))
+                                    // .peek(solution -> solution.InterLocalSearch(this.Data))
                                     .filter(solution -> solution.getTotalDistance() < AuxiliaryGraph.this.Bound)
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
@@ -161,7 +161,7 @@ public class AuxiliaryGraph {
                             Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
                             if (AuxiliaryGraph.this.LSM) 
                                 combined_route1.IntraLocalSearch(AuxiliaryGraph.this.Data);
-                            EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
+                            EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route1);
                             int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
                                                                 .map(index -> {
                                                                     if (index < sequence_as_array.length)
@@ -172,14 +172,14 @@ public class AuxiliaryGraph {
                             Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
                             if (AuxiliaryGraph.this.LSM) 
                                 combined_route2.IntraLocalSearch(AuxiliaryGraph.this.Data);
-                            EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
+                            EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route2);
                         }
                         else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                             c = false;
                             LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
                             if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
                                 lsm.Perform(AuxiliaryGraph.this.Data);
-                                EndingNode.UpdateLabel(this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
+                                EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
                             }
                         }
                     }

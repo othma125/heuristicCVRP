@@ -38,10 +38,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
         this.InitialPopulation();
         if(!this.Population[0].isFeasible())
             return;
-        boolean c;
-        do {
-            c = IntStream.range(0, this.PopulationSize).anyMatch(i -> this.Crossover());
-        } while (c || this.nonStopCondition());
+        while (IntStream.range(0, this.PopulationSize).anyMatch(i -> this.Crossover()) || this.nonStopCondition());
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
     }
