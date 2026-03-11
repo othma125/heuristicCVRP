@@ -32,38 +32,28 @@ public class GiantTour implements Comparable<GiantTour> {
                                             .max()
                                             .getAsDouble();
         if (giant_tours.length > 1) {
-            AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, false, giant_tours);
+            AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
             if (graph.isFeasible()) {
                 this.AuxiliaryGraph = graph;
                 this.setNewSequence(data);
-                this.Split(data, this.getFitness(), true);
-            }
-            else {
-                graph = new AuxiliaryGraph(data, bound, true, giant_tours);
-                if (graph.isFeasible()) {
-                    this.AuxiliaryGraph = graph;
-                    this.setNewSequence(data);
-                }
             }
         }
         else {
             this.Sequence = giant_tours[0].Sequence.clone();
-            this.Split(data, bound, true);
+            this.Split(data, bound);
         }
     }
     
     private void Split(InputData data) {
-        this.Split(data, Double.POSITIVE_INFINITY, false);
+        this.Split(data, Double.POSITIVE_INFINITY);
     }
     
-    private void Split(InputData data, double bound, boolean lsm) {
-        AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, lsm, this);
+    private void Split(InputData data, double bound) {
+        AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
             this.setNewSequence(data);
         }
-        else if (!lsm) 
-            this.Split(data, bound, true);
     }
 
     private void setRandomGiantTour(InputData data) {

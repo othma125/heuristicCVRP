@@ -31,7 +31,7 @@ public class AuxiliaryGraphNode {
         try {
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
             if (label < this.getLabel()) {
-                Solution newSolution = new Solution(label, old_solution == null ? 1 : old_solution.getRoutes().size() + 1);
+                Solution newSolution = new Solution(label, old_solution == null ? 1 : old_solution.getRoutesCount() + 1);
                 if(old_solution != null)
                     for(Route route : old_solution.getRoutes())
                         newSolution.add(route);
@@ -49,8 +49,8 @@ public class AuxiliaryGraphNode {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
-            if (data.getMaxVehicleNumber() < Integer.MAX_VALUE || label < this.getLabel()) {
-                Solution newSolution = new Solution(label, old_solution.getRoutes().size());
+            if (data.getMaxVehicleNumber() == old_solution.getRoutesCount() || label < this.getLabel()) {
+                Solution newSolution = new Solution(label, old_solution.getRoutesCount());
                 for (Route route : old_solution.getRoutes())
                     newSolution.add(route == old_route ? new_route : route);
                 if (label < this.getLabel())
@@ -75,17 +75,16 @@ public class AuxiliaryGraphNode {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
-            Solution newSolution = new Solution(label, old_solution.getRoutes().size() + 1);
-            old_solution.getRoutes()
-                        .stream()
-                        .filter(route -> route != old_route)
-                        .forEach(newSolution::add);
-            newSolution.add(route1);
-            newSolution.add(route2);
-            if (label < this.getLabel())
+            if (label < this.getLabel()) {
+                Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
+                old_solution.getRoutes()
+                            .stream()
+                            .filter(route -> route != old_route)
+                            .forEach(newSolution::add);
+                newSolution.add(route1);
+                newSolution.add(route2);
                 this.Solutions.addFirst(newSolution);
-            else
-                this.Solutions.add(newSolution);
+            }
         } finally {
             this.Lock.unlock();
         }
@@ -125,7 +124,7 @@ public class AuxiliaryGraphNode {
             int[] seq = null;
             this.Lock.lock();
             try {
-                this.getBestSolution().InterLocalSearch(data);
+                this.getBestSolution().InterRoutesLocalSearch(data);
                 seq = this.getBestSolution().getNewSequence();
             } finally {
                 this.Lock.unlock();

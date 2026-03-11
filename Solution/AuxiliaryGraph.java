@@ -26,7 +26,6 @@ import java.util.stream.Stream;
  */
 public class AuxiliaryGraph {
     
-    private final boolean LSM;
     private final int Length;
     private final double Bound;
     private final GiantTour[] GiantTours;
@@ -36,10 +35,9 @@ public class AuxiliaryGraph {
     private final int AvailableProcessorCors = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
     private final ExecutorService Executor = Executors.newFixedThreadPool(this.AvailableProcessorCors);
 
-    AuxiliaryGraph(InputData data, double bound, boolean lsm, GiantTour ... giant_tours) {
+    AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
         this.Data = data;
         this.Bound = bound;
-        this.LSM = lsm;
         this.GiantTours = giant_tours;
         this.Length = this.GiantTours[0].Sequence.length;
         this.Nodes = IntStream.range(0, this.Length + 1)
@@ -64,7 +62,7 @@ public class AuxiliaryGraph {
         try {
             if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
                 node.getSolutions().stream()
-                                    // .peek(solution -> solution.InterLocalSearch(this.Data))
+                                    // .peek(solution -> solution.InterRoutesLocalSearch(this.Data))
                                     .filter(solution -> solution.getTotalDistance() < AuxiliaryGraph.this.Bound)
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
@@ -105,11 +103,9 @@ public class AuxiliaryGraph {
             if (getClass() != obj.getClass())
                 return false;
             final ArcSetter other = (ArcSetter) obj;
-            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex
-                || this.GiantTour != other.GiantTour
-                || (this.Solution == null ? other.Solution != null : this.Solution.getTotalDistance() != other.Solution.getTotalDistance() || this.Solution.getRoutesCount() != other.Solution.getRoutesCount()))
+            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex || this.GiantTour != other.GiantTour)
                 return false;
-            return true;
+            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
         }
 
         @Override
@@ -140,10 +136,8 @@ public class AuxiliaryGraph {
                 }
                 int[] sequence_as_array = sequence_as_list.stream().mapToInt(stop -> (int) stop).toArray();
                 Route new_route = new Route(sequence_as_array, cumulative_demand, cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.getLast()));
-                if ((this.Solution == null ? 1 : this.Solution.getRoutesCount() + 1) <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()
-                    && cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
-                    if (AuxiliaryGraph.this.LSM) 
-                        new_route.IntraLocalSearch(AuxiliaryGraph.this.Data);
+                if ((this.Solution == null ? 1 : this.Solution.getRoutesCount() + 1) <= AuxiliaryGraph.this.Data.getMaxVehicleNumber() && cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
+                    new_route.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
                     EndingNode.UpdateLabel(this.Solution, new_route);
                 }
                 boolean c = true;
@@ -159,8 +153,7 @@ public class AuxiliaryGraph {
                                                                 })
                                                                 .toArray();
                             Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
-                            if (AuxiliaryGraph.this.LSM) 
-                                combined_route1.IntraLocalSearch(AuxiliaryGraph.this.Data);
+                            combined_route1.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route1);
                             int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
                                                                 .map(index -> {
@@ -170,14 +163,13 @@ public class AuxiliaryGraph {
                                                                 })
                                                                 .toArray();
                             Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
-                            if (AuxiliaryGraph.this.LSM) 
-                                combined_route2.IntraLocalSearch(AuxiliaryGraph.this.Data);
+                            combined_route2.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route2);
                         }
                         else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                             c = false;
                             LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
-                            if (lsm != null && lsm.getGain() + new_route.getTraveledDistance() + this.Solution.getTotalDistance() < EndingNode.getLabel()) {
+                            if (lsm != null) {
                                 lsm.Perform(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
                             }

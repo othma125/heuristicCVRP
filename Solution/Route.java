@@ -111,7 +111,7 @@ public final class Route implements Comparable<Route> {
         return false;
     }
 
-    public void IntraLocalSearch(InputData data) {
+    public void IntraRoutesLocalSearch(InputData data) {
         if (this.Sequence.length <= 2)
             return;
         this.IntraLocalSearch(data, Math.sqrt(this.Sequence.length) / this.Sequence.length);
@@ -131,7 +131,7 @@ public final class Route implements Comparable<Route> {
             }
         boolean again = Math.random() > probability;
         if ((again && improvementCounter > 0) || (!again && improvementCounter < max && this.StagnationBreaker(data))) 
-            this.IntraLocalSearch(data);
+            this.IntraRoutesLocalSearch(data);
     }
     
     public LocalSearchMove getLSM(InputData data, Route other) {
