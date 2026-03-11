@@ -154,7 +154,7 @@ public class AuxiliaryGraph {
                                                                 .toArray();
                             Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
                             combined_route1.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
-                            EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route1);
+                            EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
                             int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
                                                                 .map(index -> {
                                                                     if (index < sequence_as_array.length)
@@ -164,9 +164,9 @@ public class AuxiliaryGraph {
                                                                 .toArray();
                             Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
                             combined_route2.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
-                            EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, combined_route2);
+                            EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                         }
-                        else if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
+                        if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                             c = false;
                             LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
                             if (lsm != null) {

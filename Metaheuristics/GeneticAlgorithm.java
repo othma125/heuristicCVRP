@@ -117,8 +117,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private GiantTour tournamentSelection() {
         GiantTour bestInTournament = null;
         for (int i = 0; i < this.TournamentSize; i++) {
-            int randomIndex = (int) (Math.random() * this.PopulationSize);
-            GiantTour randomCompetitor = this.Population[randomIndex];
+            GiantTour randomCompetitor = this.Population[(int) (Math.random() * this.PopulationSize)];
             if (bestInTournament == null || randomCompetitor.getFitness() < bestInTournament.getFitness())
                 bestInTournament = randomCompetitor;
         }

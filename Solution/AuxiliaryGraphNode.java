@@ -36,20 +36,20 @@ public class AuxiliaryGraphNode {
                     for(Route route : old_solution.getRoutes())
                         newSolution.add(route);
                 newSolution.add(new_route);
-                this.Solutions.add(newSolution);
+                this.Solutions.add(0, newSolution);
             }
         } finally {
             this.Lock.unlock();
         }
     }
 
-    void UpdateLabel(InputData data, Solution old_solution, Route old_route, Route new_route) {
+    void UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
         if (new_route == null)
             return;
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
-            if (data.getMaxVehicleNumber() == old_solution.getRoutesCount() || label < this.getLabel()) {
+            if (label < this.getLabel() || old_solution.getRoutesCount() < this.getRoutesCount()) {
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount());
                 for (Route route : old_solution.getRoutes())
                     newSolution.add(route == old_route ? new_route : route);
@@ -65,11 +65,11 @@ public class AuxiliaryGraphNode {
 
     void UpdateLabel(InputData data, Solution old_solution, Route old_route, Route route1, Route route2) {
         if (route1 == null) {
-            this.UpdateLabel(data, old_solution, old_route, route2);
+            this.UpdateLabel(old_solution, old_route, route2);
             return;
         }
         else if (route2 == null) {
-            this.UpdateLabel(data, old_solution, old_route, route1);
+            this.UpdateLabel(old_solution, old_route, route1);
             return;
         }
         this.Lock.lock();
@@ -83,7 +83,7 @@ public class AuxiliaryGraphNode {
                             .forEach(newSolution::add);
                 newSolution.add(route1);
                 newSolution.add(route2);
-                this.Solutions.addFirst(newSolution);
+                this.Solutions.add(0, newSolution);
             }
         } finally {
             this.Lock.unlock();
