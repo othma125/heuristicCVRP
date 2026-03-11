@@ -36,7 +36,7 @@ public class AuxiliaryGraphNode {
                     for(Route route : old_solution.getRoutes())
                         newSolution.add(route);
                 newSolution.add(new_route);
-                this.Solutions.add(0, newSolution);
+                this.Solutions.addFirst(newSolution);
             }
         } finally {
             this.Lock.unlock();
@@ -83,7 +83,7 @@ public class AuxiliaryGraphNode {
                             .forEach(newSolution::add);
                 newSolution.add(route1);
                 newSolution.add(route2);
-                this.Solutions.add(0, newSolution);
+                this.Solutions.addFirst(newSolution);
             }
         } finally {
             this.Lock.unlock();
