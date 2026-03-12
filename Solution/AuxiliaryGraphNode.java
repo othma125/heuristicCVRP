@@ -53,7 +53,7 @@ public class AuxiliaryGraphNode {
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount());
                 for (Route route : old_solution.getRoutes())
                     newSolution.add(route == old_route ? new_route : route);
-                if (label < this.getLabel())
+                if (label < this.getLabel()) 
                     this.Solutions.addFirst(newSolution);
                 else
                     this.Solutions.add(newSolution);

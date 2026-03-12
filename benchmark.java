@@ -114,8 +114,10 @@ public class benchmark {
                             // Write result to CSV
                             writer.printf(Locale.US, "%s,%s,%s,%s,%s,%s\n", entry.getKey(), data.getDimension(), end_time, gt.getFitness(), Double.toString(best), gapStr);
                         }
-                        else 
+                        else {
                             System.out.println("No feasible solution found for " + data.FileName);
+                            System.out.println();
+                        }
                     });
         } catch (IOException e) {
             System.err.println("Error writing results: " + e.getMessage());

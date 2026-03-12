@@ -29,6 +29,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
     }
     
     @Override
+    @SuppressWarnings("empty-statement")
     public void Run() {
         System.out.println("File to solve = " + this.Data.FileName);
         System.out.println("Dimension = " + this.Data.getDimension());
@@ -60,8 +61,12 @@ public class GeneticAlgorithm extends MetaHeuristic {
         }
         else {
             // repeat splitting procedure to discover more improvement possibilities
-            boolean c1 = this.UpdatePopulation(new GiantTour(this.Data, parent1));
-            boolean c2 = this.UpdatePopulation(new GiantTour(this.Data, parent2));
+            parent1.Split(this.Data);
+            parent2.Split(this.Data);
+            boolean c1 = this.setBestSolution(parent1);
+            boolean c2 = this.setBestSolution(parent2);
+            if (c1 || c2)
+                Arrays.sort(this.Population);
             return c1 || c2;
         }
     }

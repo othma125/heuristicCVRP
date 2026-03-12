@@ -36,6 +36,6 @@ public class main {
             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms");
         }
         else
-            System.out.println("No feasible solution found");
+            System.out.println("No feasible solution found\n");
     }
 }

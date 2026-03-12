@@ -90,7 +90,8 @@ public class AuxiliaryGraph {
         @Override
         public int hashCode() {
             int hash = this.StartingNode.NodeIndex;
-            hash = AuxiliaryGraph.this.GiantTours.length > 1 ? 31 * hash + Double.hashCode(this.GiantTour.getFitness()) : hash;
+            if (AuxiliaryGraph.this.GiantTours.length > 1)
+                hash = 31 * hash + Double.hashCode(this.GiantTour.getFitness());
             return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
         }
 

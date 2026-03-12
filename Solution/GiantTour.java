@@ -44,8 +44,8 @@ public class GiantTour implements Comparable<GiantTour> {
         }
     }
     
-    private void Split(InputData data) {
-        this.Split(data, Double.POSITIVE_INFINITY);
+    public void Split(InputData data) {
+        this.Split(data, this.isFeasible() ? this.getFitness() : Double.POSITIVE_INFINITY);
     }
     
     private void Split(InputData data, double bound) {
