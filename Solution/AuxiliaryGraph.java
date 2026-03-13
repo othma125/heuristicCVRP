@@ -173,6 +173,7 @@ public class AuxiliaryGraph {
                             if (lsm != null) {
                                 lsm.Perform(AuxiliaryGraph.this.Data);
                                 EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
+                                break;
                             }
                         }
                     }
