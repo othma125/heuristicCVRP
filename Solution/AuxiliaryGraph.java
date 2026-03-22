@@ -36,6 +36,8 @@ public class AuxiliaryGraph {
     private final ExecutorService Executor = Executors.newFixedThreadPool(this.AvailableProcessorCors);
 
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
+        
+        // System.out.println("cors = "+ this.AvailableProcessorCors);
         this.Data = data;
         this.Bound = bound;
         this.GiantTours = giant_tours;
@@ -47,6 +49,7 @@ public class AuxiliaryGraph {
         Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], null, gt))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
+//        System.out.println("before");
         synchronized (this.ArcsSetters) {
             try {
                 this.ArcsSetters.wait();
@@ -54,6 +57,7 @@ public class AuxiliaryGraph {
                 Logger.getLogger(AuxiliaryGraph.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+//        System.out.println("after");
         this.Executor.shutdown();
     }
 
@@ -92,8 +96,8 @@ public class AuxiliaryGraph {
         public int hashCode() {
             int hash = this.StartingNode.NodeIndex;
             if (AuxiliaryGraph.this.GiantTours.length > 1)
-                hash = 31 * hash + Double.hashCode(this.GiantTour.getFitness());
-            return this.Solution != null ? 31 * hash + this.Solution.hashCode() : hash;
+                hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
+            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
         }
 
         @Override
@@ -107,9 +111,9 @@ public class AuxiliaryGraph {
             final ArcSetter other = (ArcSetter) obj;
             if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
                 return false;
-            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getFitness() != other.GiantTour.getFitness())
+            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
                 return false;
-            return this.Solution == null ? other.Solution == null : this.Solution.hashCode() == (other.Solution == null ? 0 : other.Solution.hashCode());
+            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == (other.Solution == null ? 0 : other.Solution.getTotalDistance());
         }
 
         @Override
@@ -191,9 +195,8 @@ public class AuxiliaryGraph {
         
         private void Break(AuxiliaryGraphNode node) {
             this.NodeProcessingWith = AuxiliaryGraph.this.Length;
-           boolean removed = AuxiliaryGraph.this.ArcsSetters.remove(this);
-           if ((removed && AuxiliaryGraph.this.ArcsSetters.isEmpty())
-               || (!removed && AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length))) {
+            AuxiliaryGraph.this.ArcsSetters.remove(this);
+            if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
                 synchronized (AuxiliaryGraph.this.ArcsSetters) {
                     AuxiliaryGraph.this.ArcsSetters.notifyAll();
                 }
@@ -205,9 +208,8 @@ public class AuxiliaryGraph {
         private void Foreward(AuxiliaryGraphNode node) {
             this.NodeProcessingWith++;
             if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) {
-                boolean removed = AuxiliaryGraph.this.ArcsSetters.remove(this);
-                if ((removed && AuxiliaryGraph.this.ArcsSetters.isEmpty())
-                   || (!removed && AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length))) {
+                AuxiliaryGraph.this.ArcsSetters.remove(this);
+                if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
                     synchronized (AuxiliaryGraph.this.ArcsSetters) {
                         AuxiliaryGraph.this.ArcsSetters.notifyAll();
                     }

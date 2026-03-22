@@ -92,8 +92,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
             do {
                 this.Population[i] = new GiantTour(this.Data);
                 failure_count++;
-                // if (i == 0)
-                //     System.out.println("failure = " + failure_count);
             } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < 100));
             if (i == 0 && failure_count == 100)
                 return;

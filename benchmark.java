@@ -35,6 +35,7 @@ public class benchmark {
         String benchmarkDirPath = "CVRPLib//QOBLIB";
 //        String benchmarkDirPath = "CVRPLib//A";
 //        String benchmarkDirPath = "CVRPLib//B";
+        
         File dir = new File(benchmarkDirPath);
         File[] files = dir.listFiles();
         if (files == null) {

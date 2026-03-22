@@ -27,13 +27,13 @@ public final class Solution implements Comparable<Solution> {
         this.Stops = new HashSet<>();
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        for (Route route : this.Routes)
-            hash += route.hashCode();
-        return hash + 31 * Double.hashCode(this.TotalDistance);
-    }
+//    @Override
+//    public int hashCode() {
+//        int hash = 0;
+//        for (Route route : this.Routes)
+//            hash += route.hashCode();
+//        return hash + 31 * Double.hashCode(this.TotalDistance);
+//    }
 
     void InterRoutesLocalSearch(InputData data) {
         this.Routes.forEach(r -> r.IntraRoutesLocalSearch(data));
