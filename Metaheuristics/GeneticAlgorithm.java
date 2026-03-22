@@ -63,11 +63,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
             // repeat splitting procedure to discover more improvement possibilities
             parent1.Split(this.Data);
             parent2.Split(this.Data);
-            boolean c1 = this.setBestSolution(parent1);
-            boolean c2 = this.setBestSolution(parent2);
-            if (c1 || c2)
-                Arrays.sort(this.Population);
-            return c1 || c2;
+            Arrays.sort(this.Population);
+            return this.setBestSolution(parent1) || this.setBestSolution(parent2);
         }
     }
     

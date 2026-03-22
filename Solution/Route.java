@@ -3,8 +3,6 @@ package Solution;
 import Data.InputData;
 import Solution.LSM.*;
 import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -114,10 +112,10 @@ public final class Route implements Comparable<Route> {
     public void IntraRoutesLocalSearch(InputData data) {
         if (this.Sequence.length <= 2)
             return;
-        this.IntraLocalSearch(data, Math.sqrt(this.Sequence.length) / this.Sequence.length);
+        this.IntraRoutesLocalSearch(data, Math.sqrt(this.Sequence.length) / this.Sequence.length);
     }
 
-    public void IntraLocalSearch(InputData data, double probability) {
+    public void IntraRoutesLocalSearch(InputData data, double probability) {
         int max = (int) Math.sqrt(this.Sequence.length);
         int improvementCounter = 0;
         for (int i = 0; improvementCounter < max && i < this.Sequence.length - 1; i++)

@@ -28,6 +28,7 @@ public final class Solution implements Comparable<Solution> {
     }
 
     void InterRoutesLocalSearch(InputData data) {
+        this.Routes.forEach(r -> r.IntraRoutesLocalSearch(data));
         for (Route r1 : this.Routes) 
             for (Route r2 : this.Routes) 
                 if (r1 != r2) {

@@ -92,7 +92,7 @@ public class AuxiliaryGraph {
             int hash = this.StartingNode.NodeIndex;
             if (AuxiliaryGraph.this.GiantTours.length > 1)
                 hash = 31 * hash + Double.hashCode(this.GiantTour.getFitness());
-            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) + this.Solution.getRoutesCount(): hash;
+            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
         }
 
         @Override
@@ -104,9 +104,11 @@ public class AuxiliaryGraph {
             if (getClass() != obj.getClass())
                 return false;
             final ArcSetter other = (ArcSetter) obj;
-            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex || this.GiantTour != other.GiantTour)
+            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
                 return false;
-            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
+            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour != other.GiantTour)
+                return false;
+            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance();
         }
 
         @Override
@@ -154,7 +156,7 @@ public class AuxiliaryGraph {
                                                                 })
                                                                 .toArray();
                             Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
-                            combined_route1.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+//                            combined_route1.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);
                             int[] combined_sequence2 = IntStream.range(0, old_route.getLength() + length)
                                                                 .map(index -> {
@@ -164,7 +166,7 @@ public class AuxiliaryGraph {
                                                                 })
                                                                 .toArray();
                             Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
-                            combined_route2.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+//                            combined_route2.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
                             EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                         }
                         if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
