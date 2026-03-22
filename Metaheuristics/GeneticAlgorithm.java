@@ -87,23 +87,18 @@ public class GeneticAlgorithm extends MetaHeuristic {
     }
     
     private void InitialPopulation() {
-        for (int i = 0; i < this.PopulationSize; i++) 
-            if (i == 0) {
-                byte failure_count = 0;
-                do {
-                    failure_count++;
-                    this.Population[i] = new GiantTour(this.Data);
-                } while (!this.Population[i].isFeasible() && failure_count < 100);
-                if (failure_count == 100)
-                    return;
-                this.setBestSolution(this.Population[i]);
-            }
-            else {
-                do {
-                    this.Population[i] = new GiantTour(this.Data);
-                } while (!this.Population[i].isFeasible());
-                this.setBestSolution(this.Population[i]);
-            }
+        for (int i = 0; i < this.PopulationSize; i++) {
+            int failure_count = 0;
+            do {
+                this.Population[i] = new GiantTour(this.Data);
+                failure_count++;
+                // if (i == 0)
+                //     System.out.println("failure = " + failure_count);
+            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < 100));
+            if (i == 0 && failure_count == 100)
+                return;
+            this.setBestSolution(this.Population[i]);
+        }
         Arrays.sort(this.Population);
     }
     

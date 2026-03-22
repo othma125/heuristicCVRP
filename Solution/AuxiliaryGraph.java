@@ -64,6 +64,7 @@ public class AuxiliaryGraph {
                 node.getSolutions().stream()
                                     // .peek(solution -> solution.InterRoutesLocalSearch(this.Data))
                                     .filter(solution -> solution.getTotalDistance() < AuxiliaryGraph.this.Bound)
+//                                    .distinct()
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
                                     .forEach(this.Executor::submit);
@@ -92,7 +93,7 @@ public class AuxiliaryGraph {
             int hash = this.StartingNode.NodeIndex;
             if (AuxiliaryGraph.this.GiantTours.length > 1)
                 hash = 31 * hash + Double.hashCode(this.GiantTour.getFitness());
-            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
+            return this.Solution != null ? 31 * hash + this.Solution.hashCode() : hash;
         }
 
         @Override
@@ -106,9 +107,9 @@ public class AuxiliaryGraph {
             final ArcSetter other = (ArcSetter) obj;
             if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
                 return false;
-            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour != other.GiantTour)
+            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getFitness() != other.GiantTour.getFitness())
                 return false;
-            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance();
+            return this.Solution == null ? other.Solution == null : this.Solution.hashCode() == (other.Solution == null ? 0 : other.Solution.hashCode());
         }
 
         @Override
@@ -190,8 +191,9 @@ public class AuxiliaryGraph {
         
         private void Break(AuxiliaryGraphNode node) {
             this.NodeProcessingWith = AuxiliaryGraph.this.Length;
-            AuxiliaryGraph.this.ArcsSetters.remove(this);
-            if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
+           boolean removed = AuxiliaryGraph.this.ArcsSetters.remove(this);
+           if ((removed && AuxiliaryGraph.this.ArcsSetters.isEmpty())
+               || (!removed && AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length))) {
                 synchronized (AuxiliaryGraph.this.ArcsSetters) {
                     AuxiliaryGraph.this.ArcsSetters.notifyAll();
                 }
@@ -203,8 +205,9 @@ public class AuxiliaryGraph {
         private void Foreward(AuxiliaryGraphNode node) {
             this.NodeProcessingWith++;
             if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) {
-                AuxiliaryGraph.this.ArcsSetters.remove(this);
-                if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
+                boolean removed = AuxiliaryGraph.this.ArcsSetters.remove(this);
+                if ((removed && AuxiliaryGraph.this.ArcsSetters.isEmpty())
+                   || (!removed && AuxiliaryGraph.this.ArcsSetters.stream().allMatch(setter -> setter.NodeProcessingWith == AuxiliaryGraph.this.Length))) {
                     synchronized (AuxiliaryGraph.this.ArcsSetters) {
                         AuxiliaryGraph.this.ArcsSetters.notifyAll();
                     }
