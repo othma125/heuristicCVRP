@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -34,10 +35,9 @@ public class AuxiliaryGraph {
     private final Set<ArcSetter> ArcsSetters;
     private final int AvailableProcessorCors = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
     private final ExecutorService Executor = Executors.newFixedThreadPool(this.AvailableProcessorCors);
+    private final Phaser phaser = new Phaser(1);
 
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
-        
-        // System.out.println("cors = "+ this.AvailableProcessorCors);
         this.Data = data;
         this.Bound = bound;
         this.GiantTours = giant_tours;
@@ -48,30 +48,30 @@ public class AuxiliaryGraph {
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
         Stream.of(this.GiantTours).map(gt -> new ArcSetter(this.Nodes[0], null, gt))
                                     .peek(this.ArcsSetters::add)
-                                    .forEach(this.Executor::submit);
-//        System.out.println("before");
-        synchronized (this.ArcsSetters) {
-            try {
-                this.ArcsSetters.wait();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AuxiliaryGraph.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-//        System.out.println("after");
+                                    .forEach(setter -> {
+                                        this.phaser.register();
+                                        this.Executor.submit(setter);
+                                    });
+        this.phaser.arriveAndAwaitAdvance();
         this.Executor.shutdown();
     }
 
     private void setNewSetters(AuxiliaryGraphNode node) {
+        if (node.NodeIndex == this.Length) 
+            return;
         node.Lock.lock();
         try {
             if (this.ArcsSetters.stream().allMatch(setter -> setter.StartingNode.NodeIndex != node.NodeIndex && setter.NodeProcessingWith >= node.NodeIndex)) {     
                 node.getSolutions().stream()
                                     // .peek(solution -> solution.InterRoutesLocalSearch(this.Data))
-                                    .filter(solution -> solution.getTotalDistance() < AuxiliaryGraph.this.Bound)
-//                                    .distinct()
+                                    .filter(solution -> solution.getTotalDistance() < this.Bound)
+                                    // .distinct()
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
-                                    .forEach(this.Executor::submit);
+                                    .forEach(setter -> {
+                                        this.phaser.register();
+                                        this.Executor.submit(setter);
+                                    });
             }
         } finally {
             node.Lock.unlock();
@@ -95,8 +95,7 @@ public class AuxiliaryGraph {
         @Override
         public int hashCode() {
             int hash = this.StartingNode.NodeIndex;
-            if (AuxiliaryGraph.this.GiantTours.length > 1)
-                hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
+            hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
             return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
         }
 
@@ -111,9 +110,9 @@ public class AuxiliaryGraph {
             final ArcSetter other = (ArcSetter) obj;
             if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
                 return false;
-            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
+            if (this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
                 return false;
-            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == (other.Solution == null ? 0 : other.Solution.getTotalDistance());
+            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
         }
 
         @Override
@@ -128,7 +127,8 @@ public class AuxiliaryGraph {
                 length++;
                 AuxiliaryGraphNode EndingNode = AuxiliaryGraph.this.getNode(++i);
                 if (this.Solution != null && this.Solution.getTotalDistance() >= EndingNode.getLabel()) {
-                    this.Foreward(EndingNode);
+                    this.NodeProcessingWith++;
+                    AuxiliaryGraph.this.setNewSetters(EndingNode);
                     continue;
                 }
                 while (sequence_as_list.size() < length) {
@@ -185,40 +185,16 @@ public class AuxiliaryGraph {
                         }
                     }
                 if (c && cumulative_demand > AuxiliaryGraph.this.Data.getCapacity()) {
-                    this.Break(EndingNode);
+                    this.NodeProcessingWith = AuxiliaryGraph.this.Length;
+                    AuxiliaryGraph.this.setNewSetters(EndingNode);
                     break;
                 }
-                this.Foreward(EndingNode);
+                this.NodeProcessingWith++;
+                AuxiliaryGraph.this.setNewSetters(EndingNode);
             }
-            return null;
-        }
-        
-        private void Break(AuxiliaryGraphNode node) {
-            this.NodeProcessingWith = AuxiliaryGraph.this.Length;
+            AuxiliaryGraph.this.phaser.arriveAndDeregister();
             AuxiliaryGraph.this.ArcsSetters.remove(this);
-            if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
-                synchronized (AuxiliaryGraph.this.ArcsSetters) {
-                    AuxiliaryGraph.this.ArcsSetters.notifyAll();
-                }
-            }
-            else if (node.NodeIndex < AuxiliaryGraph.this.Length)
-                AuxiliaryGraph.this.setNewSetters(node);
-        }
-        
-        private void Foreward(AuxiliaryGraphNode node) {
-            this.NodeProcessingWith++;
-            if (this.NodeProcessingWith == AuxiliaryGraph.this.Length) {
-                AuxiliaryGraph.this.ArcsSetters.remove(this);
-                if (AuxiliaryGraph.this.ArcsSetters.isEmpty()) {
-                    synchronized (AuxiliaryGraph.this.ArcsSetters) {
-                        AuxiliaryGraph.this.ArcsSetters.notifyAll();
-                    }
-                }
-                else if (node.NodeIndex < AuxiliaryGraph.this.Length)
-                    AuxiliaryGraph.this.setNewSetters(node);
-            }
-            else if (node.NodeIndex < AuxiliaryGraph.this.Length)
-                AuxiliaryGraph.this.setNewSetters(node);
+            return null;
         }
     }
 
