@@ -32,6 +32,7 @@ public class benchmark {
      */
 
     public static void main(String[] args) {
+        
         String benchmarkDirPath = "CVRPLib//QOBLIB";
 //        String benchmarkDirPath = "CVRPLib//A";
 //        String benchmarkDirPath = "CVRPLib//B";

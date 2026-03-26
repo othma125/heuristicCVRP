@@ -16,7 +16,7 @@ import java.util.LinkedList;
  */
 public class AuxiliaryGraphNode {
 
-    private List<Solution> Solutions = new LinkedList<>();
+    private final List<Solution> Solutions = new LinkedList<>();
     final ReentrantLock Lock = new ReentrantLock();
     final int NodeIndex;
 

@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public final class Route implements Comparable<Route> {
 
-    private int[] Sequence;
+    private final int[] Sequence;
     private int SumDemand;
     private double TraveledDistance;
 
@@ -215,7 +215,7 @@ public final class Route implements Comparable<Route> {
         return Arrays.toString(IntStream.of(this.Sequence).map(stop -> stop + 2).toArray());
     }
     
-    public Stream<Integer> getStops() {
+    public Stream<Integer> getSequenceAsStream() {
         return IntStream.of(this.Sequence).boxed();
     }
     

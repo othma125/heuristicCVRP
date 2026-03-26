@@ -27,14 +27,6 @@ public final class Solution implements Comparable<Solution> {
         this.Stops = new HashSet<>();
     }
 
-//    @Override
-//    public int hashCode() {
-//        int hash = 0;
-//        for (Route route : this.Routes)
-//            hash += route.hashCode();
-//        return hash + 31 * Double.hashCode(this.TotalDistance);
-//    }
-
     void InterRoutesLocalSearch(InputData data) {
         this.Routes.forEach(r -> r.IntraRoutesLocalSearch(data));
         for (Route r1 : this.Routes) 
@@ -67,7 +59,7 @@ public final class Solution implements Comparable<Solution> {
 
     void add(Route new_route) {
         this.Routes.add(new_route);
-        new_route.getStops().forEach(this.Stops::add);
+        new_route.getSequenceAsStream().forEach(this.Stops::add);
     }
     
     Set<Route> getRoutes() {

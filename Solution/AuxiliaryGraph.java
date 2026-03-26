@@ -35,9 +35,9 @@ public class AuxiliaryGraph {
         Stream.of(this.GiantTours)
                 .map(gt -> new ArcSetter(this.Nodes[0], null, gt))
                 .peek(this.ArcsSetters::add)
-                .forEach(task -> {
+                .forEach(setter -> {
                     this.phaser.register();
-                    this.Pool.execute(task);
+                    this.Pool.execute(setter);
                 });
         this.phaser.arriveAndAwaitAdvance();
         this.Pool.shutdown();
@@ -53,9 +53,9 @@ public class AuxiliaryGraph {
                                     .filter(solution -> solution.getTotalDistance() < this.Bound)
                                     .flatMap(solution -> Stream.of(this.GiantTours).map(gt -> new ArcSetter(node, solution, gt)))
                                     .peek(this.ArcsSetters::add)
-                                    .forEach(task -> {
+                                    .forEach(setter -> {
                                         this.phaser.register();
-                                        this.Pool.execute(task);
+                                        this.Pool.execute(setter);
                                     });
             }
         } finally {
@@ -169,7 +169,7 @@ public class AuxiliaryGraph {
                                 if (lsm != null) {
                                     lsm.Perform(AuxiliaryGraph.this.Data);
                                     EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
-                                    // break;
+                                    break;
                                 }
                             }
                         }
