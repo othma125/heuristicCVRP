@@ -39,10 +39,10 @@ public class GiantTour implements Comparable<GiantTour> {
     }
     
     public void Split(InputData data) {
-        this.Split(data, this.getFitness());
+        this.Split(data, this.getFitness(), 0);
     } 
     
-    private void Split(InputData data, double bound) {
+    private void Split(InputData data, double bound, int feasibility_index) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
@@ -51,18 +51,16 @@ public class GiantTour implements Comparable<GiantTour> {
         else {
             int k = 0;
             while (graph.getNode(++k).isFeasible()) {}
-            int [] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
+            int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
             System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
-            IntStream.range(partial_sequence.length, this.Sequence.length)
-                    .mapToObj(i -> {
-                        int j = (int) (Math.random() * partial_sequence.length);
-                        return new Move(i, j);
-                    })
-                    .forEach(move -> move.Swap(this.Sequence));
-            graph = new AuxiliaryGraph(data, bound, this);
-            if (graph.isFeasible()) {
-                this.AuxiliaryGraph = graph;
-                this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
+            if (k > feasibility_index) {
+                IntStream.range(partial_sequence.length, this.Sequence.length)
+                        .mapToObj(i -> {
+                            int j = (int) (Math.random() * partial_sequence.length);
+                            return new Move(i, j);
+                        })
+                        .forEach(move -> move.Swap(this.Sequence));
+                this.Split(data, bound, k);
             }
         }
     }
