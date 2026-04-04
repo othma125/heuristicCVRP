@@ -7,7 +7,6 @@ package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -50,10 +49,10 @@ public class _2Opt extends LocalSearchMove {
         }
         else {
             int[] seq1 = new int[this.I + this.J + 1];
-            IntStream.range(0, this.I)
-                     .forEach(i -> seq1[i] = this.FirstRoute.getStop(i));
-            IntStream.range(0, this.J + 1)
-                     .forEach(i -> seq1[i + this.I] = this.SecondRoute.getStop(this.J - i));
+            for (int i = 0; i < this.I; i++) 
+                seq1[i] = this.FirstRoute.getStop(i);
+            for (int i = 0; i <= this.J; i++) 
+                seq1[i + this.I] = this.SecondRoute.getStop(this.J - i);
             int[] seq2 = new int[this.SecondRoute.getLength() + this.FirstRoute.getLength() - seq1.length];
             int k = 0;
             for (int i = this.FirstRoute.getLength() - 1; i >= this.I; i--) {
@@ -73,20 +72,24 @@ public class _2Opt extends LocalSearchMove {
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)
             return true;
-        int available_capacity1 = data.getCapacity() - IntStream.range(0, this.I)
-                                                                .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
-                                                                .sum();
-        int sum_demand2 = IntStream.range(0, this.J + 1)
-                                     .map(j -> data.getDemand(this.SecondRoute.getStop(j)))
-                                     .sum();
+        int available_capacity1 = data.getCapacity();
+        for (int i = 0; i < this.I; i++) {
+            available_capacity1 -= data.getDemand(this.FirstRoute.getStop(i));
+        }
+        int sum_demand2 = 0;
+        for (int j = 0; j <= this.J; j++) {
+            sum_demand2 += data.getDemand(this.SecondRoute.getStop(j));
+        }
         if (sum_demand2 > available_capacity1 || available_capacity1 < 0)
             return false;
-        int available_capacity2 = data.getCapacity() - IntStream.range(this.J + 1, this.Border)
-                                                                .map(j -> data.getDemand(this.SecondRoute.getStop(j)))
-                                                                .sum();
-        int sum_demand1 = IntStream.range(this.I, this.FirstBorder)
-                                    .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
-                                    .sum();
+        int available_capacity2 = data.getCapacity();
+        for (int j = this.J + 1; j < this.Border; j++) {
+            available_capacity2 -= data.getDemand(this.SecondRoute.getStop(j));
+        }
+        int sum_demand1 = 0;
+        for (int i = this.I; i < this.FirstBorder; i++) {
+            sum_demand1 += data.getDemand(this.FirstRoute.getStop(i));
+        }
         return sum_demand1 <= available_capacity2;
     }
 

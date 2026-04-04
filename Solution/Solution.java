@@ -9,7 +9,9 @@ import Data.InputData;
 import Solution.LSM.LocalSearchMove;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.stream.IntStream;
+import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  *
@@ -59,7 +61,9 @@ public final class Solution implements Comparable<Solution> {
 
     void add(Route new_route) {
         this.Routes.add(new_route);
-        new_route.getSequenceAsStream().forEach(this.Stops::add);
+        List<Integer> sequenceList = new_route.getSequenceAsList();
+        for (int stop : new_route.getSequence()) 
+            this.Stops.add(stop);
     }
     
     Set<Route> getRoutes() {
@@ -75,18 +79,25 @@ public final class Solution implements Comparable<Solution> {
     }
 
     int[] getNewSequence() {
-        return this.Routes.stream()
-                            .map(Route::getSequence)
-                            .flatMapToInt(IntStream::of)
-                            .toArray();
+        List<Integer> combinedSequence = new ArrayList<>();
+        for (Route route : this.Routes) {
+            int[] routeSequence = route.getSequence();
+            for (int stop : routeSequence) {
+                combinedSequence.add(stop);
+            }
+        }
+        int[] result = new int[combinedSequence.size()];
+        for (int i = 0; i < result.length; i++) 
+            result[i] = combinedSequence.get(i);
+        return result;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (Route r : this.Routes.stream()
-                                    .sorted()
-                                    .toArray(Route[]::new)) {
+        List<Route> sortedRoutes = new ArrayList<>(this.Routes);
+        Collections.sort(sortedRoutes);
+        for (Route r : sortedRoutes) {
             sb.append("This route contains ").append(r.getLength()).append(" stops : ");
             sb.append(r.toString()).append(" = ").append(r.getTraveledDistance());
             sb.append("\n");
@@ -98,9 +109,9 @@ public final class Solution implements Comparable<Solution> {
     String export() {
         StringBuilder sb = new StringBuilder();
         int i = 0;
-        for (Route r : this.Routes.stream()
-                                    .sorted()
-                                    .toArray(Route[]::new)) {
+        List<Route> sortedRoutes = new ArrayList<>(this.Routes);
+        Collections.sort(sortedRoutes);
+        for (Route r : sortedRoutes) {
             sb.append("Route #").append(++i).append(": ");
             sb.append(r.export());
             sb.append("\n");

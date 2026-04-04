@@ -7,7 +7,6 @@ package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -76,12 +75,17 @@ public class RightShift extends LocalSearchMove {
         }
         else {
             int[] seq1 = new int[this.FirstRoute.getLength() + this.Degree + 1];
-            IntStream.range(0, this.I).forEach(i -> seq1[i] = this.FirstRoute.getStop(i));
-            IntStream.range(0, this.Degree + 1).forEach(i -> seq1[this.I + i] = this.SecondRoute.getStop(this.with2Opt ? this.J + this.Degree - i : this.J + i));
-            IntStream.range(this.I, this.FirstRoute.getLength()).forEach(i -> seq1[i + this.Degree + 1] = this.FirstRoute.getStop(i));
+            for (int i = 0; i < this.I; i++) 
+                seq1[i] = this.FirstRoute.getStop(i);
+            for (int i = 0; i <= this.Degree; i++) 
+                seq1[this.I + i] = this.SecondRoute.getStop(this.with2Opt ? this.J + this.Degree - i : this.J + i);
+            for (int i = this.I; i < this.FirstRoute.getLength(); i++) 
+                seq1[i + this.Degree + 1] = this.FirstRoute.getStop(i);
             int[] seq2 = new int[this.SecondRoute.getLength() - this.Degree - 1];
-            IntStream.range(0, this.J).forEach(i -> seq2[i] = this.SecondRoute.getStop(i));
-            IntStream.range(this.J + this.Degree + 1, this.SecondRoute.getLength()).forEach(i -> seq2[i - this.Degree - 1] = this.SecondRoute.getStop(i));
+            for (int i = 0; i < this.J; i++) 
+                seq2[i] = this.SecondRoute.getStop(i);
+            for (int i = this.J + this.Degree + 1; i < this.SecondRoute.getLength(); i++) 
+                seq2[i - this.Degree - 1] = this.SecondRoute.getStop(i);
             this.FirstRoute = seq1.length > 0 ? new Route(data, seq1) : null;
             this.SecondRoute = seq2.length > 0 ? new Route(data, seq2) : null;
         }
@@ -91,12 +95,12 @@ public class RightShift extends LocalSearchMove {
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)
             return true;
-        int available_capacity = data.getCapacity() - IntStream.range(0, this.FirstBorder)
-                                                                .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
-                                                                .sum();
-        int sum_demand = IntStream.range(this.J, this.J + this.Degree + 1)
-                                 .map(i -> data.getDemand(this.SecondRoute.getStop(i)))
-                                 .sum();
+        int available_capacity = data.getCapacity();
+        for (int i = 0; i < this.FirstBorder; i++) 
+            available_capacity -= data.getDemand(this.FirstRoute.getStop(i));
+        int sum_demand = 0;
+        for (int i = this.J; i <= this.J + this.Degree; i++) 
+            sum_demand += data.getDemand(this.SecondRoute.getStop(i));
         return sum_demand <= available_capacity && this.SecondRoute.getSumDemand() - sum_demand <= data.getCapacity();
     }
 

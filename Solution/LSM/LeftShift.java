@@ -7,7 +7,6 @@ package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -86,14 +85,22 @@ public class LeftShift extends LocalSearchMove {
         }
         else {
             int[] seq1 = new int[this.FirstRoute.getLength() - this.Degree - 1];
-            IntStream.range(0, this.I - this.Degree).forEach(i -> seq1[i] = this.FirstRoute.getStop(i));
-            IntStream.range(this.I + 1, this.FirstRoute.getLength()).forEach(i -> seq1[i - this.Degree - 1] = this.FirstRoute.getStop(i));
+            for (int i = 0; i < this.I - this.Degree; i++) 
+                seq1[i] = this.FirstRoute.getStop(i);
+            for (int i = this.I + 1; i < this.FirstRoute.getLength(); i++) 
+                seq1[i - this.Degree - 1] = this.FirstRoute.getStop(i);
             int[] seq2 = new int[this.SecondRoute.getLength() + this.Degree + 1];
             if (this.SecondRoute.getLength() > 0) {
-                IntStream.range(0, this.J + 1).forEach(i -> seq2[i] = this.SecondRoute.getStop(i));
-                IntStream.range(this.J + 1, this.SecondRoute.getLength()).forEach(i -> seq2[i + this.Degree + 1] = this.SecondRoute.getStop(i));
+                for (int i = 0; i <= this.J; i++) 
+                    seq2[i] = this.SecondRoute.getStop(i);
+                for (int i = this.J + 1; i < this.SecondRoute.getLength(); i++) 
+                    seq2[i + this.Degree + 1] = this.SecondRoute.getStop(i);
             }
-            IntStream.range(0, this.Degree + 1).forEach(i -> seq2[this.SecondRoute.getLength() > 0 ? this.J + 1 + i : i] = this.FirstRoute.getStop(this.with2Opt ? this.I - i : this.I - this.Degree + i));
+            for (int i = 0; i <= this.Degree; i++) {
+                int index = this.SecondRoute.getLength() > 0 ? this.J + 1 + i : i;
+                int stopIndex = this.with2Opt ? this.I - i : this.I - this.Degree + i;
+                seq2[index] = this.FirstRoute.getStop(stopIndex);
+            }
             this.FirstRoute = seq1.length > 0 ? new Route(data, seq1) : null;
             this.SecondRoute = seq2.length > 0 ? new Route(data, seq2) : null;
         }
@@ -103,12 +110,12 @@ public class LeftShift extends LocalSearchMove {
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)
             return true;
-        int available_capacity = data.getCapacity() - IntStream.range(0, this.Border)
-                                                               .map(i -> data.getDemand(this.SecondRoute.getStop(i)))
-                                                               .sum();
-        int sum_demand = IntStream.range(this.I - this.Degree, this.I + 1)
-                                 .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
-                                 .sum();
+        int available_capacity = data.getCapacity();
+        for (int i = 0; i < this.Border; i++) 
+            available_capacity -= data.getDemand(this.SecondRoute.getStop(i));
+        int sum_demand = 0;
+        for (int i = this.I - this.Degree; i <= this.I; i++) 
+            sum_demand += data.getDemand(this.FirstRoute.getStop(i));
         return sum_demand <= available_capacity && this.FirstRoute.getSumDemand() - sum_demand <= data.getCapacity();
     }
 

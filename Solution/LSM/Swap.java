@@ -7,7 +7,6 @@ package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -92,16 +91,18 @@ public class Swap extends LocalSearchMove {
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)
             return true;
-        int availableCapacity1 = data.getCapacity() - IntStream.range(0, this.FirstBorder)
-                                                                .filter(i -> i != this.I)
-                                                                .map(i -> data.getDemand(this.FirstRoute.getStop(i)))
-                                                                .sum();
+        int availableCapacity1 = data.getCapacity();
+        for (int i = 0; i < this.FirstBorder; i++) 
+            if (i != this.I) {
+                availableCapacity1 -= data.getDemand(this.FirstRoute.getStop(i));
+            }
         if (availableCapacity1 < 0 || data.getDemand(this.SecondRoute.getStop(this.J)) > availableCapacity1)
             return false;
-        int availableCapacity2 = data.getCapacity() - IntStream.range(0, this.Border)
-                                                                .filter(j -> j != this.J)
-                                                                .map(j -> data.getDemand(this.SecondRoute.getStop(j)))
-                                                                .sum();
+        int availableCapacity2 = data.getCapacity();
+        for (int j = 0; j < this.Border; j++) 
+            if (j != this.J) {
+                availableCapacity2 -= data.getDemand(this.SecondRoute.getStop(j));
+            }
         return data.getDemand(this.FirstRoute.getStop(this.I)) <= availableCapacity2;
     }
 

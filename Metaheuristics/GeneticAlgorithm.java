@@ -8,7 +8,6 @@ package Metaheuristics;
 import Data.InputData;
 import Solution.GiantTour;
 import java.util.Arrays;
-import java.util.stream.IntStream;
 
 /**
  *
@@ -39,9 +38,17 @@ public class GeneticAlgorithm extends MetaHeuristic {
         this.InitialPopulation();
         if(!this.Population[0].isFeasible())
             return;
-        while (IntStream.range(0, this.PopulationSize).anyMatch(i -> this.Crossover()) || this.nonStopCondition());
+        while (this.runCrossovers() || this.nonStopCondition()) {}
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
+    }
+
+    private boolean runCrossovers() {
+        boolean crossoverResult = false;
+        for (int i = 0; i < this.PopulationSize; i++) 
+            if (this.Crossover()) 
+                crossoverResult = true;
+        return crossoverResult;
     }
     
     private boolean Crossover() {

@@ -77,10 +77,11 @@ public class AuxiliaryGraphNode {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             if (label < this.getLabel()) {
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
-                old_solution.getRoutes()
-                            .stream()
-                            .filter(route -> route != old_route)
-                            .forEach(newSolution::add);
+                for (Route route : old_solution.getRoutes()) {
+                    if (route != old_route) {
+                        newSolution.add(route);
+                    }
+                }
                 newSolution.add(route1);
                 newSolution.add(route2);
                 this.Solutions.addFirst(newSolution);

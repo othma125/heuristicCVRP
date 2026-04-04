@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /*
  * To change this template, choose Tools | Templates
@@ -27,10 +26,13 @@ public class GiantTour implements Comparable<GiantTour> {
     }
     
     public GiantTour(InputData data, GiantTour ... giant_tours) {
-        double bound = Stream.of(giant_tours).filter(GiantTour::isFeasible)
-                                            .mapToDouble(GiantTour::getFitness)
-                                            .max()
-                                            .getAsDouble();
+        double bound = Double.NEGATIVE_INFINITY;
+        for (GiantTour gt : giant_tours) 
+            if (gt.isFeasible()) {
+                double fitness = gt.getFitness();
+                if (fitness > bound) 
+                    bound = fitness;
+            }
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
@@ -54,12 +56,11 @@ public class GiantTour implements Comparable<GiantTour> {
             int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
             System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
             if (k > feasibility_index) {
-                IntStream.range(partial_sequence.length, this.Sequence.length)
-                        .mapToObj(i -> {
-                            int j = (int) (Math.random() * partial_sequence.length);
-                            return new Move(i, j);
-                        })
-                        .forEach(move -> move.Swap(this.Sequence));
+                for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
+                    int j = (int) (Math.random() * partial_sequence.length);
+                    Move move = new Move(i, j);
+                    move.Swap(this.Sequence);
+                }
                 this.Split(data, bound, k);
             }
         }
@@ -68,13 +69,12 @@ public class GiantTour implements Comparable<GiantTour> {
     private void setRandomGiantTour(InputData data) {
         this.Sequence = IntStream.range(0, data.getDimension() - 1).toArray();
         int max = this.Sequence.length / 2;
-        IntStream.range(0, max)
-                .mapToObj(k -> {
-                    int i = (int) (Math.random() * this.Sequence.length);
-                    int j = (int) (Math.random() * this.Sequence.length);
-                    return new Move(i, j);
-                })
-                .forEach(move -> move.Swap(this.Sequence));
+        for (int k = 0; k < max; k++) {
+            int i = (int) (Math.random() * this.Sequence.length);
+            int j = (int) (Math.random() * this.Sequence.length);
+            Move move = new Move(i, j);
+            move.Swap(this.Sequence);
+        }
     }
     
     public int getStop(int i) {

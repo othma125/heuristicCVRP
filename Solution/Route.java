@@ -3,8 +3,8 @@ package Solution;
 import Data.InputData;
 import Solution.LSM.*;
 import java.util.Arrays;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.ArrayList;
 
 /*
  * To change this template, choose Tools | Templates
@@ -24,8 +24,10 @@ public final class Route implements Comparable<Route> {
     public int hashCode() {
         int hash = this.Sequence.length;
         hash = 31 * hash + this.SumDemand;
-        hash = 31 * hash + IntStream.of(this.Sequence).sum();
-        return hash;
+        int sum = 0;
+        for (int value : this.Sequence) 
+            sum += value;
+        return 31 * hash + sum;
     }
 
     @Override
@@ -39,7 +41,7 @@ public final class Route implements Comparable<Route> {
         final Route other = (Route) obj;
         if (this.Sequence.length != other.Sequence.length || this.SumDemand != other.SumDemand)
             return false;
-        return IntStream.range(0, this.Sequence.length).allMatch(i -> this.Sequence[i] == other.Sequence[i]);
+        return Arrays.equals(this.Sequence, other.Sequence);
     }  
     
     public Route(int[] seq, int sum_demand, double dist) {
@@ -212,11 +214,17 @@ public final class Route implements Comparable<Route> {
     
     @Override
     public String toString() {
-        return Arrays.toString(IntStream.of(this.Sequence).map(stop -> stop + 2).toArray());
+        int[] modifiedSequence = new int[this.Sequence.length];
+        for (int i = 0; i < this.Sequence.length; i++) 
+            modifiedSequence[i] = this.Sequence[i] + 2;
+        return Arrays.toString(modifiedSequence);
     }
     
-    public Stream<Integer> getSequenceAsStream() {
-        return IntStream.of(this.Sequence).boxed();
+    public java.util.List<Integer> getSequenceAsList() {
+        List<Integer> list = new ArrayList<>();
+        for (int stop : this.Sequence) 
+            list.add(stop);
+        return list;
     }
     
     public int getFirst() {
@@ -267,10 +275,12 @@ public final class Route implements Comparable<Route> {
     }
     
     public void LeftShift(int i, int j, int degree, boolean _2opt) {
-        IntStream.range(0, degree + 1).forEach(k -> new Move(i - k, _2opt ? j : j - k).LeftShift(this.Sequence));
+        for (int k = 0; k <= degree; k++) 
+            new Move(i - k, _2opt ? j : j - k).LeftShift(this.Sequence);
     }
     
     public void RightShift(int i, int j, int degree, boolean _2opt) {
-        IntStream.range(0, degree + 1).forEach(k -> new Move(_2opt ? i : i + k, j + k).RightShift(this.Sequence));
+        for (int k = 0; k <= degree; k++) 
+            new Move(_2opt ? i : i + k, j + k).RightShift(this.Sequence);
     }
 }
