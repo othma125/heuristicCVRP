@@ -15,8 +15,13 @@ public class Edge implements Cloneable {
     private int X, Y;
 
     public Edge(int x, int y){
-        this.X = x;
-        this.Y = y;
+        if (x < y) {
+            this.X = x;
+            this.Y = y;
+        } else {
+            this.X = y;
+            this.Y = x;
+        }
     }
 
     Edge(Edge edge){
@@ -26,10 +31,6 @@ public class Edge implements Cloneable {
     @Override
     public Edge clone(){
         return new Edge(this);
-    }
-    
-    public Edge Inverse() {
-        return new Edge(this.Y, this.X);
     }
 
     public int getX() {

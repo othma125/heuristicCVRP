@@ -121,16 +121,8 @@ public class InputData {
     private int getDistance(int stop1, int stop2) {
         if (stop1 == stop2)
             return 0;
-        Edge edge = new Edge(stop1, stop2), inverse = edge.Inverse();
-        if (this.DistanceMap.containsKey(edge))
-            return this.DistanceMap.get(edge);
-        else if (this.DistanceMap.containsKey(inverse))
-            return this.DistanceMap.get(inverse);
-        else {
-            int dist = euclidean(stop1, stop2);
-            this.DistanceMap.put(edge, dist);
-            return dist;
-        }
+        Edge edge = new Edge(stop1, stop2);
+        return this.DistanceMap.computeIfAbsent(edge, e -> euclidean(stop1, stop2));
     }
     
     public int getTwoStopsDistance(int stop1, int stop2) {

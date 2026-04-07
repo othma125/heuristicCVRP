@@ -9,8 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.Phaser;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class AuxiliaryGraph {
     
@@ -20,7 +18,7 @@ public class AuxiliaryGraph {
     private final AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
-    private final ForkJoinPool Pool = new ForkJoinPool();
+    private final ForkJoinPool Pool = ForkJoinPool.commonPool();
     private final Phaser phaser = new Phaser(1);
 
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
@@ -29,18 +27,16 @@ public class AuxiliaryGraph {
         this.GiantTours = giant_tours;
         this.Length = this.GiantTours[0].Sequence.length;
         this.Nodes = new AuxiliaryGraphNode[this.Length + 1];
-        for (int i = 0; i <= this.Length; i++) {
+        for (int i = 0; i <= this.Length; i++) 
             this.Nodes[i] = new AuxiliaryGraphNode(i);
-        }
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
         for (GiantTour gt : this.GiantTours) {
             ArcSetter setter = new ArcSetter(this.Nodes[0], null, gt);
             this.ArcsSetters.add(setter);
-                    this.phaser.register();
-                    this.Pool.execute(setter);
+            this.phaser.register();
+            this.Pool.execute(setter);
         }
         this.phaser.arriveAndAwaitAdvance();
-        this.Pool.shutdown();
     }
 
     private void setNewSetters(AuxiliaryGraphNode node) {

@@ -97,7 +97,7 @@ public class LeftShift extends LocalSearchMove {
                     seq2[i + this.Degree + 1] = this.SecondRoute.getStop(i);
             }
             for (int i = 0; i <= this.Degree; i++) 
-                seq2[this.SecondRoute.getLength() > 0 ? this.J + 1 + i : i] = this.FirstRoute.getStopIndex(this.with2Opt ? this.I - i : this.I - this.Degree + i);
+                seq2[this.SecondRoute.getLength() > 0 ? this.J + 1 + i : i] = this.FirstRoute.getStop(this.with2Opt ? this.I - i : this.I - this.Degree + i);
             this.FirstRoute = seq1.length > 0 ? new Route(data, seq1) : null;
             this.SecondRoute = seq2.length > 0 ? new Route(data, seq2) : null;
         }
