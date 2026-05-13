@@ -70,7 +70,7 @@ public class AuxiliaryGraph {
         private final AuxiliaryGraphNode StartingNode;
         private final GiantTour GiantTour;
         private final Solution Solution;
-        private int NodeProcessingWith;
+        private volatile int NodeProcessingWith;
 
         ArcSetter(AuxiliaryGraphNode node, Solution solution, GiantTour gt) {
             this.StartingNode = node;
