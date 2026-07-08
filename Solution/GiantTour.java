@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 /*
@@ -57,7 +58,7 @@ public class GiantTour implements Comparable<GiantTour> {
             System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
             if (k > feasibility_index) {
                 for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
-                    int j = (int) (Math.random() * partial_sequence.length);
+                    int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
                     Move move = new Move(i, j);
                     move.Swap(this.Sequence);
                 }
@@ -70,8 +71,8 @@ public class GiantTour implements Comparable<GiantTour> {
         this.Sequence = IntStream.range(0, data.getDimension() - 1).toArray();
         int max = this.Sequence.length / 2;
         for (int k = 0; k < max; k++) {
-            int i = (int) (Math.random() * this.Sequence.length);
-            int j = (int) (Math.random() * this.Sequence.length);
+            int i = ThreadLocalRandom.current().nextInt(this.Sequence.length);
+            int j = ThreadLocalRandom.current().nextInt(this.Sequence.length);
             Move move = new Move(i, j);
             move.Swap(this.Sequence);
         }

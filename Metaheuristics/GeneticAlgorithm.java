@@ -8,6 +8,7 @@ package Metaheuristics;
 import Data.InputData;
 import Solution.GiantTour;
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  *
@@ -54,7 +55,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private boolean Crossover() {
         GiantTour parent1 = this.tournamentSelection();
         GiantTour parent2 = this.tournamentSelection();
-        if (Math.random() < this.CrossoverRate && parent1 != parent2) {
+        if (ThreadLocalRandom.current().nextDouble() < this.CrossoverRate && parent1 != parent2) {
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, parent2);
             return this.UpdatePopulation(graph_crossover);
         }
@@ -81,7 +82,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
         boolean c = false;
         if (newGiantTour.compareTo(this.getLast()) < 0) {
             int half = this.PopulationSize / 2;
-            int randomIndex = half + (int) (Math.random() * (this.Population.length - half));
+            int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
             if (this.setBestSolution(newGiantTour)) {
                 c = true;
                 GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
@@ -113,13 +114,13 @@ public class GeneticAlgorithm extends MetaHeuristic {
             return true;
         double probability = current_time - this.BestSolutionReachingTime - this.StagnationMinTime;
         probability /= (double) (current_time - this.StartTime);
-        return Math.random() > probability;
+        return ThreadLocalRandom.current().nextDouble() > probability;
     }
     
     private GiantTour tournamentSelection() {
         GiantTour bestInTournament = null;
         for (int i = 0; i < this.TournamentSize; i++) {
-            GiantTour randomCompetitor = this.Population[(int) (Math.random() * this.PopulationSize)];
+            GiantTour randomCompetitor = this.Population[ThreadLocalRandom.current().nextInt(this.PopulationSize)];
             if (bestInTournament == null || randomCompetitor.getFitness() < bestInTournament.getFitness())
                 bestInTournament = randomCompetitor;
         }

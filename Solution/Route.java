@@ -5,6 +5,7 @@ import Solution.LSM.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 /*
  * To change this template, choose Tools | Templates
@@ -129,7 +130,7 @@ public final class Route implements Comparable<Route> {
                     improvementCounter++;
                 }
             }
-        boolean again = Math.random() > probability;
+        boolean again = ThreadLocalRandom.current().nextDouble() > probability;
         if ((again && improvementCounter > 0) || (!again && improvementCounter < max && this.StagnationBreaker(data))) 
             this.IntraRoutesLocalSearch(data);
     }
