@@ -1,6 +1,3 @@
-import Data.InputData;
-import Metaheuristics.*;
-import Solution.GiantTour;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -8,10 +5,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.Comparator;
+
+import Data.InputData;
+import Metaheuristics.GeneticAlgorithm;
+import Metaheuristics.MetaHeuristic;
+import Solution.GiantTour;
 
 
 
@@ -98,7 +100,11 @@ public class benchmark {
                         if (algorithm.isFeasible()) {
                             GiantTour gt = algorithm.getBestGiantTour();
                             System.out.println(gt);
-                            // gt.export(data);
+                            try {
+                                gt.export(data);
+                            } catch (IOException e) {
+                                System.err.println("Error exporting solution: " + e.getMessage());
+                            }
                             System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms\n");
 
                             // Print/display solution
