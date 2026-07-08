@@ -10,8 +10,22 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.Phaser;
 
+/**
+ * The route-first/cluster-second split structure. Given one or more giant
+ * tours, it builds a directed graph whose nodes are tour positions and whose
+ * arcs are feasible routes (respecting capacity); the shortest source-to-sink
+ * path is the optimal partition of the tour into vehicle routes.
+ *
+ * <p>Arcs are relaxed concurrently: each {@link ArcSetter} is a
+ * {@link RecursiveAction} submitted to the common {@link ForkJoinPool}, and a
+ * {@link Phaser} keeps the constructor blocked until the whole graph has been
+ * explored. The {@code Bound} prunes partial solutions that cannot improve on
+ * the incumbent cost.
+ *
+ * @author Othmane EL YAAKOUBI
+ */
 public class AuxiliaryGraph {
-    
+
     private final int Length;
     private final double Bound;
     private final GiantTour[] GiantTours;
@@ -21,6 +35,15 @@ public class AuxiliaryGraph {
     private final ForkJoinPool Pool = ForkJoinPool.commonPool();
     private final Phaser phaser = new Phaser(1);
 
+    /**
+     * Builds and fully explores the split graph for the given giant tours,
+     * blocking until all arcs have been relaxed.
+     *
+     * @param data        the problem instance
+     * @param bound       cost upper bound used to prune partial solutions
+     * @param giant_tours one or more tours to split (more than one enables the
+     *                    graph-based crossover)
+     */
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
         this.Data = data;
         this.Bound = bound;
@@ -39,6 +62,13 @@ public class AuxiliaryGraph {
         this.phaser.arriveAndAwaitAdvance();
     }
 
+    /**
+     * Spawns successor arc setters from {@code node} once every setter still
+     * running has advanced past it, so the node's labels are final before they
+     * are extended. Solutions above the pruning bound are skipped.
+     *
+     * @param node the node whose outgoing arcs should be scheduled
+     */
     private void setNewSetters(AuxiliaryGraphNode node) {
         if (node.NodeIndex == this.Length)
             return;
@@ -65,6 +95,11 @@ public class AuxiliaryGraph {
         }
     }
     
+    /**
+     * A parallel task that, starting from one node and one partial solution,
+     * grows candidate routes stop by stop along a giant tour and relaxes the
+     * labels of the downstream nodes until capacity is exhausted.
+     */
     class ArcSetter extends RecursiveAction {
 
         private final AuxiliaryGraphNode StartingNode;
@@ -72,6 +107,12 @@ public class AuxiliaryGraph {
         private final Solution Solution;
         private volatile int NodeProcessingWith;
 
+        /**
+         * @param node     the node this setter starts from
+         * @param solution the partial solution reaching {@code node}, or
+         *                 {@code null} for the source
+         * @param gt       the giant tour whose ordering guides route growth
+         */
         ArcSetter(AuxiliaryGraphNode node, Solution solution, GiantTour gt) {
             this.StartingNode = node;
             this.Solution = solution;
@@ -101,6 +142,13 @@ public class AuxiliaryGraph {
             return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
         }
 
+        /**
+         * Walks forward from the starting node, accumulating stops into a
+         * candidate route and, at each reachable node, relaxing its label with
+         * the new route (and with routes merged into or split from the existing
+         * solution). Stops once capacity is exceeded, then deregisters from the
+         * graph's {@link Phaser}.
+         */
         @Override
         protected void compute() {
             try {
@@ -191,30 +239,57 @@ public class AuxiliaryGraph {
         }
     }
 
+    /**
+     * @return the sink node (end of the tour)
+     */
     AuxiliaryGraphNode getLastNode() {
         return this.getNode(this.Length);
     }
 
+    /**
+     * @param i node index
+     * @return the node at the given index
+     */
     AuxiliaryGraphNode getNode(int i) {
         return this.Nodes[i];
     }
 
+    /**
+     * @return {@code true} if the sink node was reached, i.e. a full split
+     *         exists
+     */
     boolean isFeasible() {
         return this.getLastNode().isFeasible();
     }
 
+    /**
+     * @return the cost of the optimal split (sink node label)
+     */
     double getLabel() {
         return this.getLastNode().getLabel();
     }
 
+    /**
+     * @return the number of routes in the optimal split
+     */
     int getRoutesCount() {
         return this.getLastNode().getRoutesCount();
     }
 
+    /**
+     * @return the CVRPLIB route listing of the optimal split
+     */
     String export() {
         return this.getLastNode().export();
     }
 
+    /**
+     * Applies inter-route local search to the optimal split and returns its
+     * flattened giant-tour sequence.
+     *
+     * @param data the problem instance
+     * @return the improved sequence
+     */
     int[] getNewSequence(InputData data) {
         return this.getLastNode().getNewSequence(data);
     }

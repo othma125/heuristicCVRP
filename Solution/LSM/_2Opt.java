@@ -1,26 +1,31 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
 
 /**
+ * 2-opt move. Intra-route it reverses the segment between the two positions;
+ * inter-route it reconnects the two routes by swapping their tails, reversing
+ * one prefix. Removes edge crossings.
  *
- * @author Othmane
+ * @author Othmane EL YAAKOUBI
  */
 public class _2Opt extends LocalSearchMove {
 
     private final int FirstBorder;
 
+    /**
+     * @param data   the problem instance
+     * @param i      position in the first route
+     * @param j      position in the second route
+     * @param routes one route (intra-route) or two routes (inter-route)
+     */
     public _2Opt(InputData data, int i, int j, Route... routes) {
         super("2Opt", i, j, routes);
         this.FirstBorder = this.FirstRoute.getLength();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setGain(InputData data) {
         if (this.I == 0) {
@@ -41,6 +46,7 @@ public class _2Opt extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
@@ -68,6 +74,7 @@ public class _2Opt extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)

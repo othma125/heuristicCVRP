@@ -1,27 +1,30 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
 
 /**
+ * Swap move: exchanges the stop at position {@code I} of the first route with
+ * the stop at position {@code J} of the second (or the same) route.
  *
- * @author Othmane
+ * @author Othmane EL YAAKOUBI
  */
-
 public class Swap extends LocalSearchMove {
 
     private final int FirstBorder;
 
+    /**
+     * @param data   the problem instance
+     * @param i      position in the first route
+     * @param j      position in the second route
+     * @param routes one route (intra-route) or two routes (inter-route)
+     */
     public Swap(InputData data, int i, int j, Route... routes) {
         super("Swap", i, j, routes);
         this.FirstBorder = this.FirstRoute.getLength();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setGain(InputData data) {
 
@@ -70,6 +73,7 @@ public class Swap extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
@@ -87,6 +91,7 @@ public class Swap extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)

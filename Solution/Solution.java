@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Solution;
 
 import Data.InputData;
@@ -14,21 +9,39 @@ import java.util.Collections;
 import java.util.ArrayList;
 
 /**
+ * A complete CVRP solution: a set of vehicle {@link Route}s together with the
+ * set of stops they cover and their total travelled distance. Solutions are
+ * comparable by total distance, and can be improved in place by inter-route
+ * local search. Instances are built incrementally by the auxiliary graph while
+ * decoding a giant tour.
  *
- * @author Othmane
+ * @author Othmane EL YAAKOUBI
  */
 public final class Solution implements Comparable<Solution> {
-    
+
     private final Set<Route> Routes;
     private final Set<Integer> Stops;
     private double TotalDistance;
 
+    /**
+     * @param distance the initial total travelled distance
+     * @param capacity the expected number of routes, used to size the backing
+     *                 set
+     */
     Solution(double distance, int capacity) {
         this.TotalDistance = distance;
         this.Routes = new HashSet<>(capacity, 1f);
         this.Stops = new HashSet<>();
     }
 
+    /**
+     * Improves the solution by first optimising each route internally, then
+     * repeatedly applying the best available inter-route move until no further
+     * improving move exists. Routes replaced by a move are swapped in and the
+     * total distance is updated accordingly.
+     *
+     * @param data the problem instance providing distances and capacity
+     */
     void InterRoutesLocalSearch(InputData data) {
         this.Routes.forEach(r -> r.IntraRoutesLocalSearch(data));
         for (Route r1 : this.Routes) 
@@ -55,29 +68,52 @@ public final class Solution implements Comparable<Solution> {
                 }
     }
     
+    /**
+     * @param stop a 0-based customer index
+     * @return {@code true} if the stop is already served by this solution
+     */
     boolean contains(int stop) {
         return this.Stops.contains(stop);
     }
 
+    /**
+     * Adds a route to the solution and registers all of its stops as served.
+     *
+     * @param new_route the route to add
+     */
     void add(Route new_route) {
         this.Routes.add(new_route);
-        List<Integer> sequenceList = new_route.getSequenceAsList();
-        for (int stop : new_route.getSequence()) 
+        for (int stop : new_route.getSequence())
             this.Stops.add(stop);
     }
-    
+
+    /**
+     * @return the routes making up this solution
+     */
     Set<Route> getRoutes() {
         return this.Routes;
     }
 
+    /**
+     * @return the number of routes (vehicles) used
+     */
     int getRoutesCount() {
         return this.Routes.size();
     }
 
+    /**
+     * @return the total travelled distance of the solution
+     */
     public double getTotalDistance() {
         return this.TotalDistance;
     }
 
+    /**
+     * Flattens the routes back into a single giant-tour sequence by
+     * concatenating their stops.
+     *
+     * @return the concatenated stop sequence
+     */
     int[] getNewSequence() {
         List<Integer> combinedSequence = new ArrayList<>();
         for (Route route : this.Routes) {
@@ -106,6 +142,12 @@ public final class Solution implements Comparable<Solution> {
         return sb.toString();
     }
     
+    /**
+     * Renders the solution in CVRPLIB {@code .sol} route format, one
+     * {@code Route #k: ...} line per vehicle.
+     *
+     * @return the CVRPLIB-formatted route listing
+     */
     String export() {
         StringBuilder sb = new StringBuilder();
         int i = 0;
@@ -119,6 +161,13 @@ public final class Solution implements Comparable<Solution> {
         return sb.toString();
     }
 
+    /**
+     * Orders solutions by ascending total travelled distance.
+     *
+     * @param sol the solution to compare against
+     * @return a negative value, zero or a positive value as this solution is
+     *         cheaper than, equal to, or costlier than {@code sol}
+     */
     @Override
     public int compareTo(Solution sol) {
         return Double.compare(this.TotalDistance * 100d, sol.TotalDistance * 100d);

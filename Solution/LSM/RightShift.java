@@ -1,16 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
 
 /**
+ * Right-shift (or-opt) move: relocates a block of {@code Degree + 1} stops
+ * starting at position {@code J} of the second route into position {@code I} of
+ * the first (or the same) route. The {@code with2Opt} flag reverses the
+ * relocated block. It is the mirror image of {@link LeftShift}.
  *
- * @author Othmane
+ * @author Othmane EL YAAKOUBI
  */
 public class RightShift extends LocalSearchMove {
 
@@ -18,6 +17,15 @@ public class RightShift extends LocalSearchMove {
     private final boolean with2Opt;
     private final int FirstBorder;
 
+    /**
+     * @param data     the problem instance
+     * @param with2opt whether the relocated block is reversed
+     * @param degree   number of extra stops moved with the anchor (block size
+     *                 is {@code degree + 1})
+     * @param i        insertion position in the first route
+     * @param j        anchor position in the second route
+     * @param routes   one route (intra-route) or two routes (inter-route)
+     */
     public RightShift(InputData data, boolean with2opt, int degree, int i, int j, Route... routes) {
         super("RightShift", i, j, routes);
         this.with2Opt = with2opt;
@@ -25,6 +33,7 @@ public class RightShift extends LocalSearchMove {
         this.FirstBorder = this.FirstRoute.getLength();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setGain(InputData data) {
         if (this.with2Opt) {
@@ -67,6 +76,7 @@ public class RightShift extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
@@ -91,6 +101,7 @@ public class RightShift extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)

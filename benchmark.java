@@ -15,22 +15,19 @@ import java.util.Comparator;
 
 
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
+ * Batch entry point: solves every {@code .vrp} instance in a benchmark
+ * directory (in ascending size order), looks up each instance's best-known cost
+ * from its solution file, and writes the results with the optimality gap to a
+ * CSV report.
  *
- * @author Othmane
+ * @author Othmane EL YAAKOUBI
  */
 public class benchmark {
 
     /**
-     * @param args the command line arguments
+     * @param args the command line arguments (unused)
      */
-
     public static void main(String[] args) {
         
         String benchmarkDirPath = "CVRPLib//QOBLIB";

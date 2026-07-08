@@ -174,13 +174,28 @@ Recommended JVM options for large instances:
 -Xms512m -Xmx4g
 ```
 
+### Run a benchmark (batch)
+
+Edit `benchmark.java`:
+- Set the CVRPLIB directory path
+
+Then run:
+
+```bash
+java -Xmx4g -cp out benchmark
+```
+
+This solves every `.vrp` instance in the directory (in ascending size order),
+looks up each best-known cost from its `.sol` / `.opt.sol` / `.bst.sol` file,
+and writes a `results <dir>.csv` report with the optimality gap per instance.
+
 ---
 
 ## Current limitations
 
-- ❌ No benchmark runner yet
-- ❌ No automatic comparison with CVRPLIB best-known solutions
-- ❌ Single-instance execution only
+- ❌ No time-to-target statistics
+- ❌ Single-objective only (total distance)
+- ❌ Homogeneous fleet only
 
 These are planned extensions.
 
@@ -188,8 +203,6 @@ These are planned extensions.
 
 ## Future work
 
-- Benchmark main class (batch CVRPLIB evaluation)
-- Gap computation vs. best-known solutions
 - Time-to-target statistics
 - Multi-objective extensions (distance + tardiness)
 - Heterogeneous fleet variants

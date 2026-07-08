@@ -1,16 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Solution.LSM;
 
 import Data.InputData;
 import Solution.Route;
 
 /**
+ * Left-shift (or-opt) move: relocates a block of {@code Degree + 1} stops
+ * ending at position {@code I} of the first route to position {@code J} of the
+ * second (or the same) route. The {@code with2Opt} flag reverses the relocated
+ * block.
  *
- * @author pc
+ * @author Othmane EL YAAKOUBI
  */
 public class LeftShift extends LocalSearchMove {
 
@@ -18,6 +17,15 @@ public class LeftShift extends LocalSearchMove {
     private final int Degree;
     private final boolean with2Opt;
 
+    /**
+     * @param data     the problem instance
+     * @param with2opt whether the relocated block is reversed
+     * @param degree   number of extra stops moved with the anchor (block size
+     *                 is {@code degree + 1})
+     * @param i        anchor position in the first route
+     * @param j        insertion position in the second route
+     * @param routes   one route (intra-route) or two routes (inter-route)
+     */
     public LeftShift(InputData data, boolean with2opt, int degree, int i, int j, Route... routes) {
         super("LeftShift", i, j, routes);
         this.with2Opt = with2opt;
@@ -25,6 +33,7 @@ public class LeftShift extends LocalSearchMove {
         this.FirstBorder = this.FirstRoute.getLength();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setGain(InputData data) {
         if (this.Border == 0) {
@@ -77,6 +86,7 @@ public class LeftShift extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void Perform(InputData data) {
         if (this.OneSequence) {
@@ -103,6 +113,7 @@ public class LeftShift extends LocalSearchMove {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFeasible(InputData data) {
         if (this.OneSequence)
