@@ -3,3 +3,9 @@ Output/
 
 # Benchmark reports
 *.csv
+
+# Compiled class files
+*.class
+
+# Local environment (use .env.example as template)
+.env

@@ -1,7 +1,9 @@
-package Metaheuristics;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.GiantTour;
+package Algorithm.Metaheuristics;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.GiantTour;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 

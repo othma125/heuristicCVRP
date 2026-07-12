@@ -1,4 +1,6 @@
-package Data;
+// Author: Othmane
+
+package Algorithm.Data;
 
 /**
  * Undirected edge between two stops, used as a symmetric key into the distance

@@ -28,9 +28,12 @@
   button:disabled { opacity:.5; cursor:not-allowed; }
   .row { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
   .row > div { flex:1; min-width:180px; }
-  #log { background:#05070a; color:#9fe0a0; font-family:ui-monospace,Consolas,monospace; font-size:13px;
-         height:240px; overflow:auto; padding:12px; border-radius:8px; white-space:pre-wrap; border:1px solid var(--border); margin-top:14px; }
-  [data-theme="light"] #log { background:#0e1116; }
+  .panels { display:flex; gap:14px; margin-top:14px; flex-wrap:wrap; }
+  .panels > div { flex:1; min-width:280px; }
+  .panels h3 { font-size:13px; margin:0 0 4px; color:var(--muted); }
+  #log, #solText { background:#05070a; color:#9fe0a0; font-family:ui-monospace,Consolas,monospace; font-size:13px;
+         height:240px; overflow:auto; padding:12px; border-radius:8px; white-space:pre-wrap; border:1px solid var(--border); margin:0; }
+  [data-theme="light"] #log, [data-theme="light"] #solText { background:#0e1116; }
   #stats { margin-top:12px; font-size:14px; color:var(--muted); }
   #stats b { color:var(--text); }
   canvas { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:14px; display:block; }
@@ -70,9 +73,24 @@
       <div style="flex:0;">
         <button id="viz" disabled>📍 Visualize</button>
       </div>
+      <div style="flex:0;">
+        <label>Route</label>
+        <select id="routeId" disabled>
+          <option value="all">All</option>
+        </select>
+      </div>
     </div>
     <div id="stats"></div>
-    <div id="log">Select an instance and press Solve — the live solver log appears here.</div>
+    <div class="panels">
+      <div>
+        <h3>Solver log</h3>
+        <div id="log">Select an instance and press Solve — the live solver log appears here.</div>
+      </div>
+      <div>
+        <h3>Routes (.sol format)</h3>
+        <pre id="solText">The final routes appear here once the calculation ends.</pre>
+      </div>
+    </div>
     <canvas id="canvas" width="1040" height="560" style="display:none;"></canvas>
   </section>
 
@@ -119,6 +137,7 @@
 <script>
 const $ = id => document.getElementById(id);
 let solution = null; // {routes, cost}
+let coords = null;
 
 // theme (dark default, persisted)
 if (localStorage.theme) document.documentElement.dataset.theme = localStorage.theme;
@@ -143,7 +162,10 @@ $("folder").onchange = loadInstances;
 $("solve").onclick = () => {
   const folder = $("folder").value, file = $("instance").value;
   const log = $("log"); log.textContent = ""; $("stats").textContent = "";
-  $("solve").disabled = true; $("viz").disabled = true; solution = null;
+  $("solText").textContent = "";
+  $("solve").disabled = true; $("viz").disabled = true; $("routeId").disabled = true;
+  $("routeId").innerHTML = '<option value="all">All</option>';
+  solution = null; coords = null;
   $("canvas").style.display = "none";
   const es = new EventSource(`/api/solve?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`);
   es.addEventListener("log", e => { log.textContent += e.data + "\n"; log.scrollTop = log.scrollHeight; });
@@ -153,11 +175,16 @@ $("solve").onclick = () => {
     if (r.feasible) {
       solution = r;
       $("viz").disabled = false;
-      $("stats").innerHTML = `<b>Cost:</b> ${r.cost} &nbsp; <b>Routes:</b> ${r.routes.length} &nbsp; <b>Time:</b> ${r.timeMs} ms`;
+      $("routeId").disabled = false;
+      $("routeId").innerHTML = '<option value="all">All</option>' + r.routes.map((_, i) => `<option value="${i}">Route ${i+1}</option>`).join("");
+      const gap = r.gap != null ? ` &nbsp; <b>Gap:</b> ${r.gap}%` : "";
+      const opt = r.optimal != null ? ` &nbsp; <b>Optimal:</b> ${r.optimal}` : "";
+      $("stats").innerHTML = `<b>Cost:</b> ${r.cost} &nbsp; <b>Routes:</b> ${r.routes.length} &nbsp; <b>Time:</b> ${r.timeMs} ms${opt}${gap}`;
     } else {
       $("stats").innerHTML = `<span style="color:var(--danger)">No feasible solution found.</span>`;
     }
   });
+  es.addEventListener("sol", e => { $("solText").textContent = e.data; });
   es.onerror = () => { es.close(); $("solve").disabled = false; };
 };
 
@@ -165,7 +192,12 @@ $("viz").onclick = async () => {
   if (!solution) return;
   const folder = $("folder").value, file = $("instance").value;
   const text = await (await fetch(`/api/vrp?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`)).text();
-  drawRoutes(parseCoords(text), solution.routes);
+  coords = parseCoords(text);
+  drawRoutes(coords, solution.routes, $("routeId").value);
+};
+
+$("routeId").onchange = () => {
+  if (solution && coords) drawRoutes(coords, solution.routes, $("routeId").value);
 };
 
 // parse CVRPLIB NODE_COORD_SECTION -> {id:[x,y]}
@@ -183,7 +215,7 @@ function parseCoords(text) {
   return coords;
 }
 
-function drawRoutes(coords, routes) {
+function drawRoutes(coords, routes, routeId) {
   const cv = $("canvas"); cv.style.display = "block";
   const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
   const ids = Object.keys(coords).map(Number);
@@ -196,8 +228,10 @@ function drawRoutes(coords, routes) {
   const depot = coords[1]; // node 1 = depot
   const palette = ["#4f9cf9","#3fb950","#f0883e","#db61a2","#a371f7","#e3b341","#39c5cf","#f85149"];
 
+  const selected = routeId === "all" ? null : +routeId;
   routes.forEach((route, k) => {
-    ctx.strokeStyle = palette[k % palette.length]; ctx.lineWidth = 1.6;
+    if (selected !== null && k !== selected) return;
+    ctx.strokeStyle = palette[k % palette.length]; ctx.lineWidth = selected !== null ? 2.4 : 1.6;
     ctx.beginPath(); ctx.moveTo(tx(depot[0]), ty(depot[1]));
     for (const id of route) { const c = coords[id]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); }
     ctx.lineTo(tx(depot[0]), ty(depot[1])); ctx.stroke();

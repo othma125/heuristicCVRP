@@ -28,28 +28,33 @@ Reference: CVRPLIB – http://vrp.atd-lab.inf.puc-rio.br/index.php/en/
 
 ```
 HEURISTICCVRP
-├── CVRPLib/              # CVRPLIB instances (.vrp)
-├── Data/
-│   ├── InputData.java    # CVRPLIB parser + distance handling
-│   └── Edge.java         # Graph edge abstraction
-├── Metaheuristics/
-│   ├── MetaHeuristic.java
-│   └── GeneticAlgorithm.java
-├── Solution/
-│   ├── GiantTour.java    # Giant tour chromosome representation
-│   ├── Route.java        # Single vehicle route
-│   ├── Solution.java     # Full CVRP solution (set of routes)
-│   ├── AuxiliaryGraph.java       # Graph-based split procedure
-│   ├── AuxiliaryGraphNode.java
-│   ├── Move.java
-│   ├── LSM/              # Local Search Moves
-│   │   ├── _2Opt.java
-│   │   ├── Swap.java
-│   │   ├── LeftShift.java
-│   │   ├── RightShift.java
-│   │   └── LocalSearchMove.java
-└── main.java             # Entry point (single instance run)
-|__ benchmark.java        # Entry point (single folder run with .csv file exported containing a benchmark gap with BKS values)
+├── Algorithm/            # Solver source and CVRPLIB instances
+│   ├── CVRPLib/          # CVRPLIB instances (.vrp)
+│   ├── Data/             # Algorithm.Data package
+│   │   ├── InputData.java
+│   │   └── Edge.java
+│   ├── Metaheuristics/   # Algorithm.Metaheuristics package
+│   │   ├── MetaHeuristic.java
+│   │   └── GeneticAlgorithm.java
+│   ├── Solution/         # Algorithm.Solution package
+│   │   ├── GiantTour.java
+│   │   ├── Route.java
+│   │   ├── Solution.java
+│   │   ├── AuxiliaryGraph.java
+│   │   ├── AuxiliaryGraphNode.java
+│   │   ├── Move.java
+│   │   └── LSM/          # Algorithm.Solution.LSM package
+│   │       ├── _2Opt.java
+│   │       ├── Swap.java
+│   │       ├── LeftShift.java
+│   │       ├── RightShift.java
+│   │       └── LocalSearchMove.java
+│   ├── main.java         # Entry point (single instance run)
+│   └── benchmark.java    # Entry point (batch run + .csv benchmark gap)
+├── web/                  # web.Server package + landing page
+│   ├── Server.java
+│   └── index.html
+└── Untitled.jpg          # Author profile image
 ```
 
 ---
@@ -77,7 +82,7 @@ This guarantees:
 
 ## Genetic Algorithm (Memetic framework)
 
-Implemented in `Metaheuristics/GeneticAlgorithm.java`.
+Implemented in `Algorithm/Metaheuristics/GeneticAlgorithm.java`.
 
 ### Population
 - Initialized using randomized giant tours
@@ -126,7 +131,7 @@ Local search is executed **inside the auxiliary graph context**, allowing high-q
   - Auxiliary graph construction
   - Local search moves
 
-Thread pool management is handled in `MetaHeuristic.java`.
+Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.java`.
 
 ---
 
@@ -159,7 +164,7 @@ javac -encoding UTF-8 -d out $(find . -name "*.java")
 
 ### Run a single instance
 
-Edit `main.java`:
+Edit `Algorithm/main.java`:
 - Set the CVRPLIB file path
 
 Then run:
@@ -176,7 +181,7 @@ Recommended JVM options for large instances:
 
 ### Run a benchmark (batch)
 
-Edit `benchmark.java`:
+Edit `Algorithm/benchmark.java`:
 - Set the CVRPLIB directory path
 
 Then run:
@@ -191,23 +196,23 @@ and writes a `results <dir>.csv` report with the optimality gap per instance.
 
 ### Landing page (web UI)
 
-A minimal web front-end (`Server.java` + `web/index.html`) lets you pick a CVRPLIB
+A minimal web front-end (`web/Server.java` + `web/index.html`) lets you pick a CVRPLIB
 instance, solve it, watch the live solver log, and visualize the routes — no build
 tools or dependencies (uses the JDK's built-in HTTP server).
 
 ```bash
-java -cp out Server        # defaults to port 8080; pass a port to override
+java -cp out web.Server        # defaults to port 8080; pass a port to override
 ```
 
 Then open `http://localhost:8080`. Features:
 
-- Select any instance from `CVRPLib/` (set → instance dropdowns)
+- Select any instance from `Algorithm/CVRPLib/` (set → instance dropdowns)
 - Dark mode by default (theme toggle top-right, choice persisted)
 - Live solver log streamed over Server-Sent Events
 - **Visualize** button drawing the depot, customers and colored routes on a canvas
 - Author profile and approach description sections
 
-Run the server from the project root so it can find `CVRPLib/`, `web/` and `Untitled.jpg`.
+Run the server from the project root so it can find `Algorithm/CVRPLib/`, `web/` and `Untitled.jpg`.
 
 ---
 

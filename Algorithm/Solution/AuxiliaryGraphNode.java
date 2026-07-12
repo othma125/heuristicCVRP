@@ -1,6 +1,8 @@
-package Solution;
+// Author: Othmane
 
-import Data.InputData;
+package Algorithm.Solution;
+
+import Algorithm.Data.InputData;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.List;
 import java.util.LinkedList;

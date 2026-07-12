@@ -1,3 +1,5 @@
+// Author: Othmane
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -10,10 +12,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import Data.InputData;
-import Metaheuristics.GeneticAlgorithm;
-import Metaheuristics.MetaHeuristic;
-import Solution.GiantTour;
+import Algorithm.Data.InputData;
+import Algorithm.Metaheuristics.GeneticAlgorithm;
+import Algorithm.Metaheuristics.MetaHeuristic;
+import Algorithm.Solution.GiantTour;
 
 
 
@@ -32,9 +34,9 @@ public class benchmark {
      */
     public static void main(String[] args) {
         
-        String benchmarkDirPath = "CVRPLib//QOBLIB";
-//        String benchmarkDirPath = "CVRPLib//A";
-//        String benchmarkDirPath = "CVRPLib//B";
+        String benchmarkDirPath = "Algorithm/CVRPLib/QOBLIB";
+//        String benchmarkDirPath = "Algorithm/CVRPLib/A";
+//        String benchmarkDirPath = "Algorithm/CVRPLib/B";
         
         File dir = new File(benchmarkDirPath);
         File[] files = dir.listFiles();
@@ -43,7 +45,7 @@ public class benchmark {
             return;
         }
         // Output CSV
-        String outputFile = "results " + benchmarkDirPath.replace("//", ".") +".csv";
+        String outputFile = "results " + benchmarkDirPath.replace("/", ".") +".csv";
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
             // Header
             writer.println("File Name,Dimension,Best Solution Reach Time(ms),Cost Value,Known Optimal,Gap(%)");

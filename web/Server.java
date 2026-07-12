@@ -1,8 +1,10 @@
 // Author: Othmane
 
-import Data.InputData;
-import Metaheuristics.GeneticAlgorithm;
-import Solution.GiantTour;
+package web;
+
+import Algorithm.Data.InputData;
+import Algorithm.Metaheuristics.GeneticAlgorithm;
+import Algorithm.Solution.GiantTour;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -19,6 +21,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -33,13 +36,13 @@ import java.util.stream.Collectors;
  */
 public class Server {
 
-    private static final File CVRP_DIR = new File("CVRPLib");
+    private static final File CVRP_DIR = new File("Algorithm/CVRPLib");
     // ponytail: one solve at a time — System.out is redirected globally to the
     // SSE stream while solving. Per-session isolation only if concurrency matters.
     private static final Object SOLVE_LOCK = new Object();
 
     public static void main(String[] args) throws IOException {
-        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : envPort();
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newCachedThreadPool());
 
@@ -52,6 +55,18 @@ public class Server {
 
         server.start();
         System.out.println("Landing page ready -> http://localhost:" + port);
+    }
+
+    /** Reads PORT from the .env file at the project root; defaults to 8080. */
+    private static int envPort() {
+        File env = new File(".env");
+        if (env.exists()) try {
+            for (String line : Files.readAllLines(env.toPath())) {
+                String t = line.trim();
+                if (t.startsWith("PORT=")) return Integer.parseInt(t.substring(5).trim());
+            }
+        } catch (IOException | NumberFormatException ignored) {}
+        return 8080;
     }
 
     /* ---------------- endpoints ---------------- */
@@ -103,14 +118,15 @@ public class Server {
                 if (algo.isFeasible()) {
                     GiantTour gt = algo.getBestGiantTour();
                     gt.export(data); // writes Output/<instance>/... and lets us read routes back
-                    sse(out, "result", resultJson(true, (int) gt.getFitness(), algo.getRunningTime(), routesOf(data, gt)));
+                    sse(out, "sol", solOf(data, gt));
+                    sse(out, "result", resultJson(true, (int) gt.getFitness(), algo.getRunningTime(), routesOf(data, gt), optimalOf(f)));
                 } else {
-                    sse(out, "result", resultJson(false, 0, 0, "[]"));
+                    sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
                 }
             } catch (Exception e) {
                 System.setOut(original);
                 sse(out, "log", "ERROR: " + e.getMessage());
-                sse(out, "result", resultJson(false, 0, 0, "[]"));
+                sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
             } finally {
                 out.close();
             }
@@ -118,6 +134,14 @@ public class Server {
     }
 
     /* ---------------- helpers ---------------- */
+
+    /** Reads the just-exported .sol file and returns its raw content. */
+    private static String solOf(InputData data, GiantTour gt) throws IOException {
+        String name = new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
+        File dir = new File("Output", name);
+        File sol = new File(dir, "Instance = " + name + " Cost = " + (int) gt.getFitness() + ".sol");
+        return Files.readString(sol.toPath(), StandardCharsets.UTF_8);
+    }
 
     /** Reads back the just-exported .sol file and returns routes as a JSON array of node-id arrays. */
     private static String routesOf(InputData data, GiantTour gt) throws IOException {
@@ -136,8 +160,31 @@ public class Server {
         return "[" + String.join(",", routes) + "]";
     }
 
-    private static String resultJson(boolean feasible, int cost, long ms, String routes) {
-        return "{\"feasible\":" + feasible + ",\"cost\":" + cost + ",\"timeMs\":" + ms + ",\"routes\":" + routes + "}";
+    private static String resultJson(boolean feasible, int cost, long ms, String routes, double optimal) {
+        String opt = Double.isNaN(optimal) ? "null" : Double.toString(optimal);
+        String gap = Double.isNaN(optimal) || optimal == 0 ? "null"
+                : String.format(Locale.US, "%.2f", (cost - optimal) / optimal * 100d);
+        return "{\"feasible\":" + feasible + ",\"cost\":" + cost + ",\"timeMs\":" + ms
+                + ",\"optimal\":" + opt + ",\"gap\":" + gap + ",\"routes\":" + routes + "}";
+    }
+
+    /** Reads the known-optimal cost from the CVRPLIB {@code .sol/.opt.sol/.bst.sol} sibling of the instance. */
+    private static double optimalOf(File vrp) {
+        String base = vrp.getPath().replaceFirst("\\.vrp$", "");
+        for (String ext : new String[]{".sol", ".opt.sol", ".bst.sol"}) {
+            File sol = new File(base + ext);
+            if (!sol.exists()) continue;
+            try {
+                for (String line : Files.readAllLines(sol.toPath())) {
+                    String t = line.trim();
+                    if (t.startsWith("Cost")) {
+                        String[] parts = t.split("\\s+");
+                        if (parts.length == 2) return Double.parseDouble(parts[1]);
+                    }
+                }
+            } catch (IOException | NumberFormatException ignored) {}
+        }
+        return Double.NaN;
     }
 
     private static File vrpFile(Map<String, String> q) {

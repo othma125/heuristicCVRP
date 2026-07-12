@@ -1,8 +1,10 @@
-package Solution.LSM;
+// Author: Othmane
+
+package Algorithm.Solution.LSM;
 
 
-import Data.InputData;
-import Solution.Route;
+import Algorithm.Data.InputData;
+import Algorithm.Solution.Route;
 
 
 /**

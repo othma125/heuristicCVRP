@@ -1,7 +1,9 @@
-package Solution.LSM;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.Route;
+package Algorithm.Solution.LSM;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.Route;
 
 /**
  * Swap move: exchanges the stop at position {@code I} of the first route with

@@ -1,7 +1,9 @@
-package Solution;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.LSM.*;
+package Algorithm.Solution;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.LSM.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;

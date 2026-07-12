@@ -1,7 +1,9 @@
-package Solution;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.LSM.LocalSearchMove;
+package Algorithm.Solution;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.LSM.LocalSearchMove;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

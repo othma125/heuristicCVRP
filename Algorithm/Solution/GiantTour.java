@@ -1,6 +1,8 @@
-package Solution;
+// Author: Othmane
 
-import Data.InputData;
+package Algorithm.Solution;
+
+import Algorithm.Data.InputData;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;

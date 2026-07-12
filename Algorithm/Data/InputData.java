@@ -1,4 +1,6 @@
-package Data;
+// Author: Othmane
+
+package Algorithm.Data;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

@@ -1,4 +1,6 @@
-package Solution;
+// Author: Othmane
+
+package Algorithm.Solution;
 
 /**
  * A pair of indices that applies elementary in-place transformations to an

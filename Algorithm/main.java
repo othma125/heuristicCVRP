@@ -1,7 +1,8 @@
+// Author: Othmane
 
-import Metaheuristics.GeneticAlgorithm;
-import Solution.GiantTour;
-import Data.InputData;
+import Algorithm.Metaheuristics.GeneticAlgorithm;
+import Algorithm.Solution.GiantTour;
+import Algorithm.Data.InputData;
 import java.io.IOException;
 
 
@@ -21,9 +22,9 @@ public class main {
      */
     public static void main(String[] args) throws IOException {
         
-        // InputData data = new InputData("CVRPLib//QOBLIB//XSH-n20-k4-51.vrp");
-        InputData data = new InputData("CVRPLib//B//B-n57-k7.vrp");
-//        InputData data = new InputData("CVRPLib//XL//XL-n1048-k237.vrp");
+        // InputData data = new InputData("Algorithm/CVRPLib/QOBLIB/XSH-n20-k4-51.vrp");
+        InputData data = new InputData("Algorithm/CVRPLib/B/B-n57-k7.vrp");
+//        InputData data = new InputData("Algorithm/CVRPLib/XL/XL-n1048-k237.vrp");
         GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
         algorithm.Run();
         

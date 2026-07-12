@@ -1,8 +1,10 @@
-package Metaheuristics;
+// Author: Othmane
+
+package Algorithm.Metaheuristics;
 
 
-import Solution.GiantTour;
-import Data.InputData;
+import Algorithm.Solution.GiantTour;
+import Algorithm.Data.InputData;
 
 /**
  * Base class for metaheuristic solvers. Holds the problem instance, tracks the

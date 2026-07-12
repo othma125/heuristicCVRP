@@ -1,7 +1,9 @@
-package Solution.LSM;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.Route;
+package Algorithm.Solution.LSM;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.Route;
 
 /**
  * Right-shift (or-opt) move: relocates a block of {@code Degree + 1} stops

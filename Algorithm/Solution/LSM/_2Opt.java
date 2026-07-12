@@ -1,7 +1,9 @@
-package Solution.LSM;
+// Author: Othmane
 
-import Data.InputData;
-import Solution.Route;
+package Algorithm.Solution.LSM;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.Route;
 
 /**
  * 2-opt move. Intra-route it reverses the segment between the two positions;
