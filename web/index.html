@@ -30,7 +30,7 @@
   .row > div { flex:1; min-width:180px; }
   .panels { display:flex; gap:14px; margin-top:14px; flex-wrap:wrap; }
   .panels > div { flex:1; min-width:280px; }
-  .panels h3 { font-size:13px; margin:0 0 4px; color:var(--muted); }
+  .panels h3 { font-size:13px; margin:0 0 4px; color:var(--muted); display:flex; align-items:center; justify-content:space-between; min-height:40px; }
   #log, #solText { background:#05070a; color:#9fe0a0; font-family:ui-monospace,Consolas,monospace; font-size:13px;
          height:240px; overflow:auto; padding:12px; border-radius:8px; white-space:pre-wrap; border:1px solid var(--border); margin:0; }
   [data-theme="light"] #log, [data-theme="light"] #solText { background:#0e1116; }
@@ -68,7 +68,7 @@
         <select id="instance"></select>
       </div>
       <div style="flex:0;">
-        <button class="primary" id="solve">▶ Solve</button>
+        <button class="primary" id="solve" style="background:var(--accent2);border-color:var(--accent2);">▶ Solve</button>
       </div>
       <div style="flex:0;">
         <button id="viz" disabled>📍 Visualize</button>
@@ -87,7 +87,10 @@
         <div id="log">Select an instance and press Solve — the live solver log appears here.</div>
       </div>
       <div>
-        <h3>Routes (.sol format)</h3>
+        <h3>
+          <span>Routes (.sol format)</span>
+          <button id="save" disabled>💾 Save</button>
+        </h3>
         <pre id="solText">The final routes appear here once the calculation ends.</pre>
       </div>
     </div>
@@ -159,18 +162,29 @@ async function loadInstances() {
 }
 $("folder").onchange = loadInstances;
 
+let running = false;
+function setRunning(on) {
+  running = on;
+  $("solve").textContent = on ? "■ Stop" : "▶ Solve";
+  $("solve").style.background = $("solve").style.borderColor = on ? "var(--danger)" : "var(--accent2)";
+  $("folder").disabled = on;
+  $("instance").disabled = on;
+}
+
 $("solve").onclick = () => {
+  if (running) { $("solve").disabled = true; fetch("/api/stop"); return; } // let the final result arrive over SSE
   const folder = $("folder").value, file = $("instance").value;
   const log = $("log"); log.textContent = ""; $("stats").textContent = "";
   $("solText").textContent = "";
-  $("solve").disabled = true; $("viz").disabled = true; $("routeId").disabled = true;
+  $("viz").disabled = true; $("routeId").disabled = true; $("save").disabled = true;
   $("routeId").innerHTML = '<option value="all">All</option>';
   solution = null; coords = null;
   $("canvas").style.display = "none";
+  setRunning(true);
   const es = new EventSource(`/api/solve?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`);
   es.addEventListener("log", e => { log.textContent += e.data + "\n"; log.scrollTop = log.scrollHeight; });
   es.addEventListener("result", e => {
-    es.close(); $("solve").disabled = false;
+    es.close(); setRunning(false); $("solve").disabled = false;
     const r = JSON.parse(e.data);
     if (r.feasible) {
       solution = r;
@@ -184,8 +198,26 @@ $("solve").onclick = () => {
       $("stats").innerHTML = `<span style="color:var(--danger)">No feasible solution found.</span>`;
     }
   });
-  es.addEventListener("sol", e => { $("solText").textContent = e.data; });
-  es.onerror = () => { es.close(); $("solve").disabled = false; };
+  es.addEventListener("sol", e => { $("solText").textContent = e.data; $("save").disabled = false; });
+  es.onerror = () => { es.close(); setRunning(false); $("solve").disabled = false; };
+};
+
+$("save").onclick = async () => {
+  const file = $("instance").value, text = $("solText").textContent;
+  if (window.showSaveFilePicker) { // native "Save As" dialog, opens at Desktop
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: file + ".sol", startIn: "desktop",
+        types: [{ description: "Solution file", accept: { "text/plain": [".sol"] } }],
+      });
+      const w = await handle.createWritable(); await w.write(text); await w.close();
+      $("stats").innerHTML += ` &nbsp; <b>Saved:</b> ${handle.name}`;
+    } catch (e) { if (e.name !== "AbortError") $("stats").innerHTML += ` &nbsp; <span style="color:var(--danger)">Save failed</span>`; }
+    return;
+  }
+  const a = document.createElement("a"); // fallback (Firefox/Safari): plain download
+  a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+  a.download = file + ".sol"; a.click(); URL.revokeObjectURL(a.href);
 };
 
 $("viz").onclick = async () => {

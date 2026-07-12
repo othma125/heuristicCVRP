@@ -40,6 +40,8 @@ public class Server {
     // ponytail: one solve at a time — System.out is redirected globally to the
     // SSE stream while solving. Per-session isolation only if concurrency matters.
     private static final Object SOLVE_LOCK = new Object();
+    // The solver currently running, so /api/stop can ask it to stop early.
+    private static volatile GeneticAlgorithm currentAlgo;
 
     public static void main(String[] args) throws IOException {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : envPort();
@@ -52,6 +54,7 @@ public class Server {
         server.createContext("/api/instances", Server::instances);
         server.createContext("/api/vrp", Server::vrp);
         server.createContext("/api/solve", Server::solve);
+        server.createContext("/api/stop", Server::stop);
 
         server.start();
         System.out.println("Landing page ready -> http://localhost:" + port);
@@ -113,6 +116,7 @@ public class Server {
             try {
                 InputData data = new InputData(f.getPath().replace("\\", "//"));
                 GeneticAlgorithm algo = new GeneticAlgorithm(data);
+                currentAlgo = algo;
                 algo.Run();
                 System.setOut(original);
                 if (algo.isFeasible()) {
@@ -128,9 +132,17 @@ public class Server {
                 sse(out, "log", "ERROR: " + e.getMessage());
                 sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
             } finally {
+                currentAlgo = null;
                 out.close();
             }
         }
+    }
+
+    /** Asks the running solve to stop early; it then returns the best tour found so far. */
+    private static void stop(HttpExchange ex) throws IOException {
+        GeneticAlgorithm a = currentAlgo;
+        if (a != null) a.requestStop();
+        send(ex, 200, "text/plain", "stopping".getBytes());
     }
 
     /* ---------------- helpers ---------------- */

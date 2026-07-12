@@ -50,7 +50,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
         this.InitialPopulation();
         if(!this.Population[0].isFeasible())
             return;
-        while (this.runCrossovers() || this.nonStopCondition()) {}
+        // requestStop() (e.g. a web Stop request) breaks out, keeping the best-so-far tour.
+        while (!this.isStopRequested() && (this.runCrossovers() || this.nonStopCondition())) {}
         this.EndTime = System.currentTimeMillis() - this.StartTime;
         System.out.println();
     }
@@ -62,7 +63,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
      */
     private boolean runCrossovers() {
         boolean crossoverResult = false;
-        for (int i = 0; i < this.PopulationSize; i++)
+        for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++)
             if (this.Crossover())
                 crossoverResult = true;
         return crossoverResult;
