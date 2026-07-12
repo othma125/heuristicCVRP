@@ -49,6 +49,8 @@ public class Server {
         server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/", Server::serveIndex);
+        server.createContext("/app.js", ex -> serveFile(ex, new File("Web/app.js"), "text/javascript; charset=utf-8"));
+        server.createContext("/styles.css", ex -> serveFile(ex, new File("Web/styles.css"), "text/css; charset=utf-8"));
         server.createContext("/assets/profile.jpg", ex -> serveFile(ex, new File("profile.jpg"), "image/jpeg"));
         server.createContext("/api/folders", Server::folders);
         server.createContext("/api/instances", Server::instances);
@@ -76,7 +78,7 @@ public class Server {
 
     private static void serveIndex(HttpExchange ex) throws IOException {
         if (!ex.getRequestURI().getPath().equals("/")) { send(ex, 404, "text/plain", "Not found".getBytes()); return; }
-        serveFile(ex, new File("web/index.html"), "text/html; charset=utf-8");
+        serveFile(ex, new File("Web/index.html"), "text/html; charset=utf-8");
     }
 
     private static void folders(HttpExchange ex) throws IOException {
