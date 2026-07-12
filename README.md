@@ -51,9 +51,11 @@ HEURISTICCVRP
 │   │       └── LocalSearchMove.java
 │   ├── main.java         # Entry point (single instance run)
 │   └── benchmark.java    # Entry point (batch run + .csv benchmark gap)
-├── web/                  # web.Server package + landing page
+├── Web/                  # web.Server package + landing page
 │   ├── Server.java
-│   └── index.html
+│   ├── index.html
+│   ├── app.js
+│   └── styles.css
 └── profile.jpg           # Author profile image
 ```
 
@@ -196,7 +198,7 @@ and writes a `results <dir>.csv` report with the optimality gap per instance.
 
 ### Landing page (web UI)
 
-A minimal web front-end (`web/Server.java` + `web/index.html`) lets you pick a CVRPLIB
+A minimal web front-end (`Web/Server.java` + `Web/index.html`) lets you pick a CVRPLIB
 instance, solve it, watch the live solver log, and visualize the routes — no build
 tools or dependencies (uses the JDK's built-in HTTP server).
 
@@ -221,11 +223,12 @@ Then open `http://localhost:<port>`. Features:
   (`.sol` / `.opt.sol` / `.bst.sol`), the stats line reports the known **Optimal** and
   the **Gap (%)**. If the optimal is not known, both fields are simply omitted — the
   stats line still shows cost, route count and time, and everything else works as usual
-- **Visualize** button drawing the depot, customers and colored routes on a canvas,
-  with a **Route** selector to focus on a single route (all routes by default)
+- **Map view**: the depot and customers are drawn as soon as an instance is selected,
+  and the colored routes appear automatically once solving ends — with a **Route**
+  selector to focus on a single route (all routes by default)
 - Author profile and approach description sections
 
-Run the server from the project root so it can find `.env`, `Algorithm/CVRPLib/`, `web/` and `profile.jpg`.
+Run the server from the project root so it can find `.env`, `Algorithm/CVRPLib/`, `Web/` and `profile.jpg`.
 
 ---
 
