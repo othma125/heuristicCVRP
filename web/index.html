@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heuristic CVRP Solver — Othmane EL YAAKOUBI</title>
+<style>
+  :root {
+    --bg:#0e1116; --panel:#171b22; --border:#2a313c; --text:#e6edf3;
+    --muted:#9aa7b4; --accent:#4f9cf9; --accent2:#3fb950; --danger:#f85149;
+  }
+  [data-theme="light"] {
+    --bg:#f6f8fa; --panel:#ffffff; --border:#d0d7de; --text:#1f2328;
+    --muted:#57606a; --accent:#0969da; --accent2:#1a7f37; --danger:#cf222e;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid var(--border); }
+  header h1 { font-size:18px; margin:0; }
+  header .sub { color:var(--muted); font-size:13px; }
+  main { max-width:1080px; margin:0 auto; padding:28px; }
+  section { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:22px; margin-bottom:22px; }
+  h2 { margin-top:0; font-size:16px; }
+  label { font-size:13px; color:var(--muted); display:block; margin-bottom:4px; }
+  select, button { font:inherit; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); }
+  button { cursor:pointer; border-color:var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
+  .row > div { flex:1; min-width:180px; }
+  #log { background:#05070a; color:#9fe0a0; font-family:ui-monospace,Consolas,monospace; font-size:13px;
+         height:240px; overflow:auto; padding:12px; border-radius:8px; white-space:pre-wrap; border:1px solid var(--border); margin-top:14px; }
+  [data-theme="light"] #log { background:#0e1116; }
+  #stats { margin-top:12px; font-size:14px; color:var(--muted); }
+  #stats b { color:var(--text); }
+  canvas { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:14px; display:block; }
+  .profile { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }
+  .profile img { width:120px; height:120px; border-radius:12px; object-fit:cover; border:1px solid var(--border); }
+  .profile ul { margin:8px 0 0; padding-left:18px; color:var(--muted); }
+  .toggle { background:none; border:1px solid var(--border); }
+  a { color:var(--accent); }
+  .approach p { color:var(--muted); }
+  .approach h3 { font-size:14px; margin-bottom:4px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Heuristic CVRP Solver</h1>
+    <div class="sub">Memetic algorithm with graph-based giant-tour decomposition</div>
+  </div>
+  <button class="toggle" id="theme">◐ Theme</button>
+</header>
+
+<main>
+  <section>
+    <h2>Solve an instance</h2>
+    <div class="row">
+      <div>
+        <label>CVRPLIB set</label>
+        <select id="folder"></select>
+      </div>
+      <div>
+        <label>Instance</label>
+        <select id="instance"></select>
+      </div>
+      <div style="flex:0;">
+        <button class="primary" id="solve">▶ Solve</button>
+      </div>
+      <div style="flex:0;">
+        <button id="viz" disabled>📍 Visualize</button>
+      </div>
+    </div>
+    <div id="stats"></div>
+    <div id="log">Select an instance and press Solve — the live solver log appears here.</div>
+    <canvas id="canvas" width="1040" height="560" style="display:none;"></canvas>
+  </section>
+
+  <section class="approach">
+    <h2>The approach</h2>
+    <p><em>Graph-Based Genetic Optimization for Vehicle Routing via Giant Tour Decomposition.</em>
+    Classical GA crossovers copy contiguous segments syntactically and enforce feasibility with costly
+    repair. This solver instead operates on <b>giant tours</b> (a permutation of all customers with no
+    route delimiters) and defers feasibility to a graph-theoretic splitting step.</p>
+    <h3>Giant tour representation</h3>
+    <p>The GA evolves a population of giant tours with selection and mutation. Fitness is never evaluated on
+    the tour directly — each individual is decoded into a feasible CVRP solution via the split.</p>
+    <h3>Graph-based split into feasible routes</h3>
+    <p>For each tour a directed acyclic graph models every feasible split: an arc <i>i→j</i> is a route
+    covering customers <i>i+1…j</i> within vehicle capacity, weighted by its exact routing cost (depot
+    connections included). Optimal splitting reduces to a <b>shortest path</b> on this graph.</p>
+    <h3>Crossover &amp; embedded local search</h3>
+    <p>Classical cut-point crossover is replaced by a <b>shortest-path-driven inheritance</b> mechanism: the
+    graph explicitly decides which components each parent contributes. Intra- and inter-route local search
+    (2-opt, swap, left/right shift) runs <b>inside</b> the graph rather than as a separate phase. Built in
+    Java 23 with multi-threaded graph construction and evaluation.</p>
+  </section>
+
+  <section>
+    <h2>About the author</h2>
+    <div class="profile">
+      <img src="/assets/profile.jpg" alt="Othmane EL YAAKOUBI">
+      <div>
+        <b>Othmane EL YAAKOUBI</b> — Operations Research Expert &amp; Backend Developer<br>
+        <span class="sub">Metaheuristics · Vehicle Routing &amp; Scheduling · Large-scale optimization</span>
+        <ul>
+          <li>Memetic algorithms for TSP and CVRP; mathematical models for EV routing and train dispatching.</li>
+          <li>Urban transit optimization (M'DINA BUS, Casablanca): +22% daily revenue via genetic algorithm, delivered in Java.</li>
+          <li>Manufacturing layout &amp; scheduling (UTT, Troyes): GA + ant colony and NSGA-II bi-objective scheduling.</li>
+          <li>Tooling: Cplex, Gurobi, Pulp, scikit-learn, PyTorch · C/C++, Java, Python, SQL · Flask, SQLAlchemy, Redis.</li>
+          <li>Languages: Arabic (native), English &amp; French (full professional).</li>
+        </ul>
+        <a href="mailto:othma125@gmail.com">othma125@gmail.com</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let solution = null; // {routes, cost}
+
+// theme (dark default, persisted)
+if (localStorage.theme) document.documentElement.dataset.theme = localStorage.theme;
+$("theme").onclick = () => {
+  const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = t; localStorage.theme = t;
+};
+
+async function json(url) { return (await fetch(url)).json(); }
+
+async function loadFolders() {
+  const folders = await json("/api/folders");
+  $("folder").innerHTML = folders.map(f => `<option>${f}</option>`).join("");
+  await loadInstances();
+}
+async function loadInstances() {
+  const insts = await json("/api/instances?folder=" + encodeURIComponent($("folder").value));
+  $("instance").innerHTML = insts.map(i => `<option>${i}</option>`).join("");
+}
+$("folder").onchange = loadInstances;
+
+$("solve").onclick = () => {
+  const folder = $("folder").value, file = $("instance").value;
+  const log = $("log"); log.textContent = ""; $("stats").textContent = "";
+  $("solve").disabled = true; $("viz").disabled = true; solution = null;
+  $("canvas").style.display = "none";
+  const es = new EventSource(`/api/solve?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`);
+  es.addEventListener("log", e => { log.textContent += e.data + "\n"; log.scrollTop = log.scrollHeight; });
+  es.addEventListener("result", e => {
+    es.close(); $("solve").disabled = false;
+    const r = JSON.parse(e.data);
+    if (r.feasible) {
+      solution = r;
+      $("viz").disabled = false;
+      $("stats").innerHTML = `<b>Cost:</b> ${r.cost} &nbsp; <b>Routes:</b> ${r.routes.length} &nbsp; <b>Time:</b> ${r.timeMs} ms`;
+    } else {
+      $("stats").innerHTML = `<span style="color:var(--danger)">No feasible solution found.</span>`;
+    }
+  });
+  es.onerror = () => { es.close(); $("solve").disabled = false; };
+};
+
+$("viz").onclick = async () => {
+  if (!solution) return;
+  const folder = $("folder").value, file = $("instance").value;
+  const text = await (await fetch(`/api/vrp?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`)).text();
+  drawRoutes(parseCoords(text), solution.routes);
+};
+
+// parse CVRPLIB NODE_COORD_SECTION -> {id:[x,y]}
+function parseCoords(text) {
+  const coords = {}; let inSection = false;
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (/^NODE_COORD_SECTION/i.test(t)) { inSection = true; continue; }
+    if (inSection) {
+      if (/^[A-Z_]+/i.test(t) && !/^\d/.test(t)) break; // next section
+      const p = t.split(/\s+/);
+      if (p.length >= 3) coords[+p[0]] = [+p[1], +p[2]];
+    }
+  }
+  return coords;
+}
+
+function drawRoutes(coords, routes) {
+  const cv = $("canvas"); cv.style.display = "block";
+  const ctx = cv.getContext("2d"); ctx.clearRect(0, 0, cv.width, cv.height);
+  const ids = Object.keys(coords).map(Number);
+  const xs = ids.map(i => coords[i][0]), ys = ids.map(i => coords[i][1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pad = 30, W = cv.width - 2 * pad, H = cv.height - 2 * pad;
+  const sx = W / ((maxX - minX) || 1), sy = H / ((maxY - minY) || 1), s = Math.min(sx, sy);
+  const tx = x => pad + (x - minX) * s;
+  const ty = y => cv.height - pad - (y - minY) * s; // flip Y
+  const depot = coords[1]; // node 1 = depot
+  const palette = ["#4f9cf9","#3fb950","#f0883e","#db61a2","#a371f7","#e3b341","#39c5cf","#f85149"];
+
+  routes.forEach((route, k) => {
+    ctx.strokeStyle = palette[k % palette.length]; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(tx(depot[0]), ty(depot[1]));
+    for (const id of route) { const c = coords[id]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); }
+    ctx.lineTo(tx(depot[0]), ty(depot[1])); ctx.stroke();
+  });
+  // customers
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--muted");
+  for (const id of ids) { if (id === 1) continue; const c = coords[id]; ctx.beginPath(); ctx.arc(tx(c[0]), ty(c[1]), 3, 0, 7); ctx.fill(); }
+  // depot
+  ctx.fillStyle = "#f85149"; ctx.beginPath(); ctx.arc(tx(depot[0]), ty(depot[1]), 6, 0, 7); ctx.fill();
+}
+
+loadFolders();
+</script>
+</body>
+</html>

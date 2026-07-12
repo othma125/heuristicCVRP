@@ -189,6 +189,26 @@ This solves every `.vrp` instance in the directory (in ascending size order),
 looks up each best-known cost from its `.sol` / `.opt.sol` / `.bst.sol` file,
 and writes a `results <dir>.csv` report with the optimality gap per instance.
 
+### Landing page (web UI)
+
+A minimal web front-end (`Server.java` + `web/index.html`) lets you pick a CVRPLIB
+instance, solve it, watch the live solver log, and visualize the routes — no build
+tools or dependencies (uses the JDK's built-in HTTP server).
+
+```bash
+java -cp out Server        # defaults to port 8080; pass a port to override
+```
+
+Then open `http://localhost:8080`. Features:
+
+- Select any instance from `CVRPLib/` (set → instance dropdowns)
+- Dark mode by default (theme toggle top-right, choice persisted)
+- Live solver log streamed over Server-Sent Events
+- **Visualize** button drawing the depot, customers and colored routes on a canvas
+- Author profile and approach description sections
+
+Run the server from the project root so it can find `CVRPLib/`, `web/` and `Untitled.jpg`.
+
 ---
 
 ## Current limitations
