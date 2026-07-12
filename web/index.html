@@ -27,17 +27,13 @@
         <label>Instance</label>
         <select id="instance"></select>
       </div>
-      <div style="flex:0;">
+      <div style="flex:0;display:flex;gap:10px;align-items:flex-end;">
         <button class="primary" id="solve" style="background:var(--accent2);border-color:var(--accent2);">Solve</button>
-      </div>
-      <div style="flex:0;">
-        <label>Route</label>
-        <select id="routeId" disabled>
-          <option value="all">All</option>
-        </select>
+        <button id="viz" disabled>Visualize</button>
       </div>
     </div>
     <div id="stats"></div>
+    <div id="routeList"></div>
     <div class="panels">
       <div>
         <h3>Solver log</h3>

@@ -35,6 +35,10 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 #stats .v { font-family:ui-monospace,Consolas,monospace; font-size:22px; line-height:1; color:var(--text); }
 #stats .v.good { color:var(--accent2); }
 #stats .v.warn { color:#e3b341; }
+#routeList { display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; }
+#routeList:empty { display:none; }
+.rchk { display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
+.rchk .sw { width:12px; height:12px; border-radius:3px; }
 canvas { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:14px; display:block; }
 .profile { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }
 .profile img { width:120px; height:120px; border-radius:12px; object-fit:cover; border:1px solid var(--border); }

@@ -3,6 +3,8 @@
 const $ = id => document.getElementById(id);
 let solution = null; // {routes, cost}
 let coords = null;
+const PALETTE = ["#4f9cf9","#3fb950","#f0883e","#db61a2","#a371f7","#e3b341","#39c5cf","#f85149"];
+let vizShown = false; // the map/checklist appear only after the first Visualize click
 
 // theme (dark default, persisted)
 if (localStorage.theme) document.documentElement.dataset.theme = localStorage.theme;
@@ -36,8 +38,8 @@ async function loadCoords() {
 async function showInstance() {
   if (running) return;
   coords = await loadCoords();
-  solution = null;
-  if (coords) drawRoutes(coords, [], "all");
+  solution = null; $("viz").disabled = true;
+  if (vizShown && coords) drawRoutes(coords, [], null);
 }
 
 let running = false;
@@ -54,10 +56,9 @@ $("solve").onclick = () => {
   const folder = $("folder").value, file = $("instance").value;
   const log = $("log"); log.textContent = ""; $("stats").textContent = "";
   $("solText").textContent = "";
-  $("routeId").disabled = true; $("save").disabled = true;
-  $("routeId").innerHTML = '<option value="all">All</option>';
+  $("routeList").innerHTML = ""; $("save").disabled = true; $("viz").disabled = true;
   solution = null;
-  if (coords) drawRoutes(coords, [], "all"); // keep the scatter visible while solving
+  if (vizShown && coords) drawRoutes(coords, [], null); // keep the scatter visible while solving
   setRunning(true);
   const es = new EventSource(`/api/solve?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(file)}`);
   es.addEventListener("log", e => { log.textContent += e.data + "\n"; log.scrollTop = log.scrollHeight; });
@@ -65,15 +66,13 @@ $("solve").onclick = () => {
     es.close(); setRunning(false); $("solve").disabled = false;
     const r = JSON.parse(e.data);
     if (r.feasible) {
-      solution = r;
-      $("routeId").disabled = false;
-      $("routeId").innerHTML = '<option value="all">All</option>' + r.routes.map((_, i) => `<option value="${i}">Route ${i+1}</option>`).join("");
+      solution = r; $("viz").disabled = false;
+      if (vizShown) { buildRouteList(); drawSolution(); }
       const stat = (k, v, cls = "") => `<div class="stat"><span class="k">${k}</span><span class="v ${cls}">${v}</span></div>`;
       let html = stat("Cost", r.cost) + stat("Routes", r.routes.length) + stat("Time", r.timeMs + " ms");
       if (r.optimal != null) html += stat("Optimal", r.optimal);
       if (r.gap != null) html += stat("Gap", r.gap + "%", parseFloat(r.gap) <= 0.01 ? "good" : "warn");
       $("stats").innerHTML = html;
-      drawSolution();
     } else {
       $("stats").innerHTML = `<span style="color:var(--danger)">No feasible solution found.</span>`;
     }
@@ -100,12 +99,33 @@ $("save").onclick = async () => {
   a.download = file + ".sol"; a.click(); URL.revokeObjectURL(a.href);
 };
 
+// build the per-route checklist (an "All" master toggle + one colored box per route)
+function buildRouteList() {
+  if (!solution) return;
+  $("routeList").innerHTML =
+    `<label class="rchk"><input type="checkbox" id="allRoutes" checked>All</label>` +
+    solution.routes.map((_, i) =>
+      `<label class="rchk"><input type="checkbox" class="route" value="${i}" checked>` +
+      `<span class="sw" style="background:${PALETTE[i % PALETTE.length]}"></span>Route ${i+1}</label>`).join("");
+}
+
 async function drawSolution() {
   if (!solution) return;
   if (!coords) coords = await loadCoords();
-  if (coords) drawRoutes(coords, solution.routes, $("routeId").value);
+  const visible = new Set([...document.querySelectorAll("#routeList .route:checked")].map(c => +c.value));
+  if (coords) drawRoutes(coords, solution.routes, visible);
 }
-$("routeId").onchange = drawSolution;
+
+$("routeList").onchange = e => {
+  if (e.target.id === "allRoutes")
+    document.querySelectorAll("#routeList .route").forEach(c => c.checked = e.target.checked);
+  else
+    $("allRoutes").checked = [...document.querySelectorAll("#routeList .route")].every(c => c.checked);
+  drawSolution();
+};
+
+// enabled only once a solution exists; first click reveals the map/checklist
+$("viz").onclick = () => { vizShown = true; buildRouteList(); drawSolution(); };
 
 // parse CVRPLIB NODE_COORD_SECTION -> {id:[x,y]}
 function parseCoords(text) {
@@ -122,7 +142,7 @@ function parseCoords(text) {
   return coords;
 }
 
-function drawRoutes(coords, routes, routeId) {
+function drawRoutes(coords, routes, visible) {
   const cv = $("canvas"); cv.style.display = "block";
   const dpr = window.devicePixelRatio || 1;
   const cssW = cv.clientWidth || 1040, cssH = 560;
@@ -136,12 +156,10 @@ function drawRoutes(coords, routes, routeId) {
   const tx = x => pad + (x - minX) * s;
   const ty = y => cssH - pad - (y - minY) * s; // flip Y
   const depot = coords[1]; // node 1 = depot
-  const palette = ["#4f9cf9","#3fb950","#f0883e","#db61a2","#a371f7","#e3b341","#39c5cf","#f85149"];
 
-  const selected = routeId === "all" ? null : +routeId;
   routes.forEach((route, k) => {
-    if (selected !== null && k !== selected) return;
-    ctx.strokeStyle = palette[k % palette.length]; ctx.lineWidth = selected !== null ? 2.4 : 1.6;
+    if (visible && !visible.has(k)) return; // visible: null = all, else Set of route indices
+    ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = visible && visible.size === 1 ? 2.4 : 1.6;
     ctx.beginPath(); ctx.moveTo(tx(depot[0]), ty(depot[1]));
     for (const id of route) { const c = coords[id]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); }
     ctx.lineTo(tx(depot[0]), ty(depot[1])); ctx.stroke();
