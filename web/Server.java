@@ -47,7 +47,7 @@ public class Server {
         server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/", Server::serveIndex);
-        server.createContext("/assets/profile.jpg", ex -> serveFile(ex, new File("Untitled.jpg"), "image/jpeg"));
+        server.createContext("/assets/profile.jpg", ex -> serveFile(ex, new File("profile.jpg"), "image/jpeg"));
         server.createContext("/api/folders", Server::folders);
         server.createContext("/api/instances", Server::instances);
         server.createContext("/api/vrp", Server::vrp);

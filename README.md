@@ -54,7 +54,7 @@ HEURISTICCVRP
 ├── web/                  # web.Server package + landing page
 │   ├── Server.java
 │   └── index.html
-└── Untitled.jpg          # Author profile image
+└── profile.jpg           # Author profile image
 ```
 
 ---
@@ -201,18 +201,31 @@ instance, solve it, watch the live solver log, and visualize the routes — no b
 tools or dependencies (uses the JDK's built-in HTTP server).
 
 ```bash
-java -cp out web.Server        # defaults to port 8080; pass a port to override
+bash run-server.sh             # compiles then starts the server
+bash kill-server.sh            # stops any running web.Server process
+# or run the compiled class directly:
+java -cp out web.Server        # port resolution order below
 ```
 
-Then open `http://localhost:8080`. Features:
+Port resolution: a CLI argument (`java -cp out web.Server 9090`) wins; otherwise the
+`PORT` value from the `.env` file at the project root is used; otherwise it defaults
+to `8080`. Copy `.env.example` to `.env` to change it without touching code.
+
+Then open `http://localhost:<port>`. Features:
 
 - Select any instance from `Algorithm/CVRPLib/` (set → instance dropdowns)
 - Dark mode by default (theme toggle top-right, choice persisted)
-- Live solver log streamed over Server-Sent Events
-- **Visualize** button drawing the depot, customers and colored routes on a canvas
+- Two output panels: a live **solver log** (streamed over Server-Sent Events) and a
+  **routes** panel showing the final solution in `.sol` format once solving ends
+- **Optimality gap**: when the instance ships with a known optimal
+  (`.sol` / `.opt.sol` / `.bst.sol`), the stats line reports the known **Optimal** and
+  the **Gap (%)**. If the optimal is not known, both fields are simply omitted — the
+  stats line still shows cost, route count and time, and everything else works as usual
+- **Visualize** button drawing the depot, customers and colored routes on a canvas,
+  with a **Route** selector to focus on a single route (all routes by default)
 - Author profile and approach description sections
 
-Run the server from the project root so it can find `Algorithm/CVRPLib/`, `web/` and `Untitled.jpg`.
+Run the server from the project root so it can find `.env`, `Algorithm/CVRPLib/`, `web/` and `profile.jpg`.
 
 ---
 
