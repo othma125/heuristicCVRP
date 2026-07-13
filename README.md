@@ -1,5 +1,7 @@
 # Heuristic CVRP Solver (Memetic / Genetic Algorithm)
 
+![CVRP Memetic Algorithm Solver](banner.png)
+
 This project solves **Capacitated Vehicle Routing Problem (CVRP)** instances using a **Memetic Algorithm** (Genetic Algorithm + Local Search), with instances taken from **CVRPLIB**.
 
 The solver is **CVRP-native** (not a TSP wrapper): it uses a **giant tour representation** combined with a **graph-based splitting procedure** to generate feasible vehicle routes under capacity constraints, and applies rich intra- and inter-route local search moves.
