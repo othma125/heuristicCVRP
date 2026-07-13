@@ -99,6 +99,39 @@ $("save").onclick = async () => {
   a.download = file + ".sol"; a.click(); URL.revokeObjectURL(a.href);
 };
 
+// save the rendered map as an image; the extension is chosen on the page (#imgExt),
+// so the "Save As" dialog gets a single matching type (Windows only shows the first reliably)
+const MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
+
+// composite the canvas onto the theme background (JPEG/WebP have no transparency)
+function exportBlob(mime) {
+  const src = $("canvas"), out = document.createElement("canvas");
+  out.width = src.width; out.height = src.height;
+  const ctx = out.getContext("2d");
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#fff";
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(src, 0, 0);
+  return new Promise(r => out.toBlob(r, mime, 0.95));
+}
+
+$("saveImg").onclick = async () => {
+  const ext = $("imgExt").value, mime = MIME[ext];
+  const name = ($("instance").value || "cvrp") + "_solution." + ext;
+  if (window.showSaveFilePicker) { // native "Save As" dialog, lets the user pick the folder
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: name, startIn: "desktop",
+        types: [{ description: name, accept: { [mime]: ["." + ext] } }],
+      });
+      const w = await handle.createWritable(); await w.write(await exportBlob(mime)); await w.close();
+      $("stats").innerHTML += ` &nbsp; <b>Saved:</b> ${handle.name}`;
+    } catch (e) { if (e.name !== "AbortError") $("stats").innerHTML += ` &nbsp; <span style="color:var(--danger)">Save failed</span>`; }
+    return;
+  }
+  const a = document.createElement("a"); // fallback (Firefox/Safari): plain download
+  a.href = URL.createObjectURL(await exportBlob(mime)); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+};
+
 // build the per-route checklist (an "All" master toggle + one colored box per route)
 function buildRouteList() {
   if (!solution) return;
@@ -125,7 +158,7 @@ $("routeList").onchange = e => {
 };
 
 // enabled only once a solution exists; first click reveals the map/checklist
-$("viz").onclick = () => { vizShown = true; buildRouteList(); drawSolution(); };
+$("viz").onclick = () => { vizShown = true; $("saveBar").style.display = "block"; buildRouteList(); drawSolution(); };
 
 // parse CVRPLIB NODE_COORD_SECTION -> {id:[x,y]}
 function parseCoords(text) {
