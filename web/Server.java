@@ -49,7 +49,7 @@ public class Server {
 
     /**
      * Starts the HTTP server on the port supplied as the first argument, or on the
-     * port read from {@code .env} (default 8080), and registers all API contexts.
+     * port read from {@code .env} (default 8081), and registers all API contexts.
      *
      * @param args optional port number
      * @throws IOException if the server socket cannot be created
@@ -73,7 +73,7 @@ public class Server {
         System.out.println("Landing page ready -> http://localhost:" + port);
     }
 
-    /** Reads PORT from the .env file at the project root; defaults to 8080. */
+    /** Reads PORT from the .env file at the project root; defaults to 8081. */
     private static int envPort() {
         File env = new File(".env");
         if (env.exists()) {
@@ -86,7 +86,7 @@ public class Server {
                 // Fall back to the default port.
             }
         }
-        return 8080;
+        return 8081;
     }
 
     /* ---------------- endpoints ---------------- */
