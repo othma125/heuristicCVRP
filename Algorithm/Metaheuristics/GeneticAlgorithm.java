@@ -87,6 +87,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
             GiantTour random;
             do {
                 random = new GiantTour(this.Data);
+                if (!random.isFeasible())
+                    random.close();
             } while (!random.isFeasible());
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
             return this.UpdatePopulation(graph_crossover); 
@@ -124,26 +126,31 @@ public class GeneticAlgorithm extends MetaHeuristic {
             this.Population[randomIndex] = newGiantTour;
             Arrays.sort(this.Population);
         }
+        else
+            newGiantTour.close();
         return c;
     }
     
     /**
      * Fills the population with feasible random giant tours, giving up on the
      * first slot after 100 failed attempts (which aborts the run), and sorts
-     * the population by fitness.
+     * the population by fitness. Bails out early if a stop is requested,
+     * leaving the sort out since trailing slots may be unfilled.
      */
     private void InitialPopulation() {
-        for (int i = 0; i < this.PopulationSize; i++) {
+        for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++) {
             int failure_count = 0;
             do {
                 this.Population[i] = new GiantTour(this.Data);
                 failure_count++;
-            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < 100));
+            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < 100) && !this.isStopRequested());
             if (i == 0 && failure_count == 100)
                 return;
-            this.setBestSolution(this.Population[i]);
+            if (this.Population[i].isFeasible())
+                this.setBestSolution(this.Population[i]);
         }
-        Arrays.sort(this.Population);
+        if (!this.isStopRequested())
+            Arrays.sort(this.Population);
     }
     
     /**

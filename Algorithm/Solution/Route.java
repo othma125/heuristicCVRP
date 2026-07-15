@@ -18,9 +18,9 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author Othmane EL YAAKOUBI
  */
-public final class Route implements Comparable<Route> {
+public final class Route implements Comparable<Route>, AutoCloseable {
 
-    private final int[] Sequence;
+    private int[] Sequence;
     private int SumDemand;
     private double TraveledDistance;
 
@@ -407,5 +407,15 @@ public final class Route implements Comparable<Route> {
     public void RightShift(int i, int j, int degree, boolean _2opt) {
         for (int k = 0; k <= degree; k++)
             new Move(_2opt ? i : i + k, j + k).RightShift(this.Sequence);
+    }
+
+    /**
+     * Releases the stop sequence. Every other method dereferences
+     * {@code Sequence} and will throw {@link NullPointerException} once this
+     * has been called, so only close a route that nothing else still holds.
+     */
+    @Override
+    public void close() {
+        this.Sequence = null;
     }
 }

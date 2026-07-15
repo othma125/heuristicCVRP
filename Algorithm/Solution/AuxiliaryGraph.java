@@ -26,16 +26,25 @@ import java.util.concurrent.Phaser;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class AuxiliaryGraph {
+public class AuxiliaryGraph implements AutoCloseable{
 
     private final int Length;
     private final double Bound;
     private final GiantTour[] GiantTours;
-    private final AuxiliaryGraphNode[] Nodes;
+    private AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
     private final ForkJoinPool Pool = ForkJoinPool.commonPool();
     private final Phaser phaser = new Phaser(1);
+
+    @Override
+    public void close() {
+        new Thread(() -> {
+            for (AuxiliaryGraphNode node : this.Nodes)
+                node.close();
+            this.Nodes = null;
+        }).start();
+    }
 
     /**
      * Builds and fully explores the split graph for the given giant tours,

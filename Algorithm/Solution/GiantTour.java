@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class GiantTour implements Comparable<GiantTour> {
+public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
 
     public int[] Sequence;
     public AuxiliaryGraph AuxiliaryGraph = null;
@@ -53,6 +53,8 @@ public class GiantTour implements Comparable<GiantTour> {
             }
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
+            if (this.AuxiliaryGraph != null)
+                this.AuxiliaryGraph.close();
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
@@ -81,10 +83,13 @@ public class GiantTour implements Comparable<GiantTour> {
     private void Split(InputData data, double bound, int feasibility_index) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
+            if (this.AuxiliaryGraph != null)
+                this.AuxiliaryGraph.close();
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
         else {
+            graph.close();
             int k = 0;
             while (graph.getNode(++k).isFeasible()) {}
             int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
@@ -187,17 +192,29 @@ public class GiantTour implements Comparable<GiantTour> {
      * @throws IOException if the output file cannot be written
      */
     public void export(InputData data) throws IOException {
-        String instanceName = new File(data.FileName).getName().replaceFirst("\\.vrp$", ""); 
+        String instanceName = new File(data.FileName).getName().replaceFirst("\\.vrp$", "");
         File baseDir = new File("Output");
         File instanceDir = new File(baseDir, instanceName);
-        instanceDir.mkdirs(); 
-        String fileName = "Instance = " + instanceName + " Cost = " + (int) this.getFitness() + ".sol"; 
-        File outFile = new File(instanceDir, fileName); 
+        instanceDir.mkdirs();
+        String fileName = "Instance = " + instanceName + " Cost = " + (int) this.getFitness() + ".sol";
+        File outFile = new File(instanceDir, fileName);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(outFile))) {
             bw.write(this.export());
             bw.newLine();
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }
+    }
+
+    /**
+     * Closes the auxiliary graph resource.
+     */
+    @Override
+    public void close() {
+        if (this.AuxiliaryGraph != null) {
+            this.AuxiliaryGraph.close();
+            this.AuxiliaryGraph = null;
+        }
+        this.Sequence = null;
     }
 }

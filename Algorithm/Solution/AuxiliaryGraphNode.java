@@ -15,11 +15,18 @@ import java.util.LinkedList;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class AuxiliaryGraphNode {
+public class AuxiliaryGraphNode implements AutoCloseable {
 
     private final List<Solution> Solutions = new LinkedList<>();
     final ReentrantLock Lock = new ReentrantLock();
     final int NodeIndex;
+
+    @Override
+    public void close() {
+        for (Solution s : this.Solutions)
+            s.close();
+        this.Solutions.clear();
+    }
 
     /**
      * @param NodeIndex the position of this node in the giant tour
