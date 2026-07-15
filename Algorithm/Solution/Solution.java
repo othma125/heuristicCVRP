@@ -45,7 +45,11 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @param data the problem instance providing distances and capacity
      */
     void InterRoutesLocalSearch(InputData data) {
-        this.Routes.forEach(r -> r.IntraRoutesLocalSearch(data));
+        this.Routes.forEach(r -> {
+            double old_distance = r.getTraveledDistance();
+            r.IntraRoutesLocalSearch(data);
+            this.TotalDistance += r.getTraveledDistance() - old_distance;
+        });
         for (Route r1 : this.Routes) 
             for (Route r2 : this.Routes) 
                 if (r1 != r2) {
