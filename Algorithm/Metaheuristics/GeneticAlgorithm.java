@@ -87,8 +87,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
             GiantTour random;
             do {
                 random = new GiantTour(this.Data);
-                if (!random.isFeasible())
-                    random.close();
             } while (!random.isFeasible());
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
             return this.UpdatePopulation(graph_crossover); 
@@ -126,8 +124,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
             this.Population[randomIndex] = newGiantTour;
             Arrays.sort(this.Population);
         }
-        else
-            newGiantTour.close();
         return c;
     }
     

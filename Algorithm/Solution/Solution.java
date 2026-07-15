@@ -19,7 +19,7 @@ import java.util.ArrayList;
  *
  * @author Othmane EL YAAKOUBI
  */
-public final class Solution implements Comparable<Solution>, AutoCloseable {
+public final class Solution implements Comparable<Solution> {
 
     private final Set<Route> Routes;
     private final Set<Integer> Stops;
@@ -177,13 +177,5 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     @Override
     public int compareTo(Solution sol) {
         return Double.compare(this.TotalDistance * 100d, sol.TotalDistance * 100d);
-    }
-    
-    @Override
-    public void close() {
-        for (Route r : this.Routes)
-            r.close();
-        this.Routes.clear();
-        this.Stops.clear();
     }
 }

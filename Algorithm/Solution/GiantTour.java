@@ -19,10 +19,22 @@ import java.util.stream.IntStream;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
+public class GiantTour implements Comparable<GiantTour> {
 
     public int[] Sequence;
     public AuxiliaryGraph AuxiliaryGraph = null;
+
+    /**
+     * Snapshot copy: captures the tour's current sequence and split.
+     * {@link #Split(InputData)} replaces those fields rather than mutating
+     * them, so re-splitting {@code gt} leaves this copy untouched.
+     *
+     * @param gt the giant tour to snapshot
+     */
+    public GiantTour(GiantTour gt) {
+        this.Sequence = gt.Sequence == null ? null : gt.Sequence.clone();
+        this.AuxiliaryGraph = gt.AuxiliaryGraph;
+    }
 
     /**
      * Creates a random giant tour and immediately splits it into routes.
@@ -53,8 +65,6 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
             }
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
-            if (this.AuxiliaryGraph != null)
-                this.AuxiliaryGraph.close();
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
@@ -83,13 +93,10 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     private void Split(InputData data, double bound, int feasibility_index) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
-            if (this.AuxiliaryGraph != null)
-                this.AuxiliaryGraph.close();
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
         else {
-            graph.close();
             int k = 0;
             while (graph.getNode(++k).isFeasible()) {}
             int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
@@ -204,17 +211,5 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }
-    }
-
-    /**
-     * Closes the auxiliary graph resource.
-     */
-    @Override
-    public void close() {
-        if (this.AuxiliaryGraph != null) {
-            this.AuxiliaryGraph.close();
-            this.AuxiliaryGraph = null;
-        }
-        this.Sequence = null;
     }
 }
