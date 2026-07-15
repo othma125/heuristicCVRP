@@ -9,3 +9,6 @@ Output/
 
 # Local environment (use .env.example as template)
 .env
+
+# Local AI assistant notes
+CLAUDE.md
