@@ -106,8 +106,7 @@ public class GiantTour implements Comparable<GiantTour> {
             if (k > feasibility_index) {
                 for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
                     int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
-                    Move move = new Move(i, j);
-                    move.Swap(this.Sequence);
+                    new Move(i, j).Swap(this.Sequence);
                 }
                 this.Split(data, bound, k);
             }
@@ -126,8 +125,7 @@ public class GiantTour implements Comparable<GiantTour> {
         for (int k = 0; k < max; k++) {
             int i = ThreadLocalRandom.current().nextInt(this.Sequence.length);
             int j = ThreadLocalRandom.current().nextInt(this.Sequence.length);
-            Move move = new Move(i, j);
-            move.Swap(this.Sequence);
+            new Move(i, j).Swap(this.Sequence);
         }
     }
     

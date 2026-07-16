@@ -64,13 +64,15 @@ public class AuxiliaryGraphNode {
      * @param old_route    the route being replaced
      * @param new_route    the replacement route
      */
-    void UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
+    boolean UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
         if (new_route == null)
-            return;
+            return false;
+        boolean c = false;
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
             if (label < this.getLabel() || old_solution.getRoutesCount() < this.getRoutesCount()) {
+                c = this.getLabel() < Double.POSITIVE_INFINITY;
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount());
                 for (Route route : old_solution.getRoutes())
                     newSolution.add(route == old_route ? new_route : route);
@@ -82,6 +84,7 @@ public class AuxiliaryGraphNode {
         } finally {
             this.Lock.unlock();
         }
+        return c;
     }
 
     /**
