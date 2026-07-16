@@ -57,7 +57,15 @@ public class Server {
      */
     public static void main(String[] args) throws IOException {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : envPort();
-        HttpServer server = bind(port);
+        HttpServer server;
+        try {
+            server = HttpServer.create(new InetSocketAddress(port), 0);
+        } catch (BindException e) {
+            System.err.println("Port " + port + " is already in use. Stop the running server"
+                    + " (bash kill-server.sh) or pick another port: java -cp out web.Server 9090");
+            System.exit(1);
+            return;
+        }
         server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/", Server::serveIndex);
@@ -71,19 +79,7 @@ public class Server {
         server.createContext("/api/stop", Server::stop);
 
         server.start();
-        System.out.println("Landing page ready -> http://localhost:" + server.getAddress().getPort());
-    }
-
-    /** Binds the first free port at or after {@code port}, giving up after 10 tries. */
-    private static HttpServer bind(int port) throws IOException {
-        for (int p = port; p < port + 10; p++) {
-            try {
-                return HttpServer.create(new InetSocketAddress(p), 0);
-            } catch (BindException e) {
-                System.out.println("Port " + p + " is busy, trying " + (p + 1) + "...");
-            }
-        }
-        throw new BindException("No free port between " + port + " and " + (port + 9));
+        System.out.println("Landing page ready -> http://localhost:" + port);
     }
 
     /** Reads PORT from the .env file at the project root; defaults to 8081. */

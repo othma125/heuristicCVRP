@@ -215,9 +215,8 @@ Port resolution: a CLI argument (`java -cp out web.Server 9090`) wins; otherwise
 `PORT` value from the `.env` file at the project root is used; otherwise it defaults
 to `8080`. Copy `.env.example` to `.env` to change it without touching code.
 
-If that port is already in use, the server walks forward to the next free one (up to
-10 ports) and prints the port it actually bound — so a stale server or a second
-instance no longer crashes the startup.
+If that port is already in use, the server exits immediately with a message telling you
+to stop the running server (`bash kill-server.sh`) or pass a different port.
 
 Then open `http://localhost:<port>`. Features:
 
