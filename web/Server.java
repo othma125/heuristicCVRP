@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +57,7 @@ public class Server {
      */
     public static void main(String[] args) throws IOException {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : envPort();
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = bind(port);
         server.setExecutor(Executors.newCachedThreadPool());
 
         server.createContext("/", Server::serveIndex);
@@ -70,7 +71,19 @@ public class Server {
         server.createContext("/api/stop", Server::stop);
 
         server.start();
-        System.out.println("Landing page ready -> http://localhost:" + port);
+        System.out.println("Landing page ready -> http://localhost:" + server.getAddress().getPort());
+    }
+
+    /** Binds the first free port at or after {@code port}, giving up after 10 tries. */
+    private static HttpServer bind(int port) throws IOException {
+        for (int p = port; p < port + 10; p++) {
+            try {
+                return HttpServer.create(new InetSocketAddress(p), 0);
+            } catch (BindException e) {
+                System.out.println("Port " + p + " is busy, trying " + (p + 1) + "...");
+            }
+        }
+        throw new BindException("No free port between " + port + " and " + (port + 9));
     }
 
     /** Reads PORT from the .env file at the project root; defaults to 8081. */
