@@ -207,8 +207,10 @@ public class AuxiliaryGraph {
                                         combined_sequence1[index] = sequence_as_array[index - old_route.getLength()];
                                 }
                                 Route combined_route1 = new Route(AuxiliaryGraph.this.Data, combined_sequence1);
-                                if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route1))
+                                if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route1)) {
                                     combined_route1.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+                                    EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);  
+                                }
                                 int[] combined_sequence2 = new int[old_route.getLength() + length];
                                 for (int index = 0; index < combined_sequence2.length; index++) {
                                     if (index < sequence_as_array.length)
@@ -217,8 +219,10 @@ public class AuxiliaryGraph {
                                         combined_sequence2[index] = old_route.getStop(index - sequence_as_array.length);
                                 }
                                 Route combined_route2 = new Route(AuxiliaryGraph.this.Data, combined_sequence2);
-                                if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route2))
+                                if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route2)) {
                                     combined_route2.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+                                    EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
+                                }
                             }
                             if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                                 c = false;
