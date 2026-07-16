@@ -96,7 +96,9 @@ public class GiantTour implements Comparable<GiantTour> {
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
-        else {
+        // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
+        // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
+        else if (!data.isStopRequested()) {
             int k = 0;
             while (graph.getNode(++k).isFeasible()) {}
             int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);

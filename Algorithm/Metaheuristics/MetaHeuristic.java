@@ -21,8 +21,6 @@ public abstract class MetaHeuristic {
     long BestSolutionReachingTime;
     private GiantTour BestGiantTour = null;
     public final long StagnationMinTime;
-    // Set by requestStop() (e.g. a web Stop request) to break out of Run() early.
-    private volatile boolean StopRequested = false;
 
 
     /**
@@ -73,16 +71,18 @@ public abstract class MetaHeuristic {
 
     /**
      * Requests the running solver to stop early; it will return the best tour found so far.
+     * The flag lives on the instance so the split and its local search can abort mid-run
+     * instead of finishing the current giant tour first.
      */
     public void requestStop() {
-        this.StopRequested = true;
+        this.Data.requestStop();
     }
 
     /**
      * @return {@code true} once {@link #requestStop()} has been called
      */
     protected boolean isStopRequested() {
-        return this.StopRequested;
+        return this.Data.isStopRequested();
     }
 
     /**

@@ -33,7 +33,22 @@ public class InputData {
     private int[] Demands;
     private double[] Abscissas;
     private double[] Ordinates;
-    
+    // Carried here because the instance is the one object every split and local search
+    // already receives, so a stop can be seen deep in the search without new plumbing.
+    private volatile boolean StopRequested = false;
+
+    /** Asks any split work running on this instance to abort as soon as it can. */
+    public void requestStop() {
+        this.StopRequested = true;
+    }
+
+    /**
+     * @return {@code true} once {@link #requestStop()} has been called
+     */
+    public boolean isStopRequested() {
+        return this.StopRequested;
+    }
+
     /**
      * Parses a CVRPLIB {@code .vrp} instance from disk.
      *

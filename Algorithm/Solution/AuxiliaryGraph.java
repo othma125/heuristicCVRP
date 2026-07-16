@@ -56,6 +56,8 @@ public class AuxiliaryGraph {
             this.Nodes[i] = new AuxiliaryGraphNode(i);
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
         for (GiantTour gt : this.GiantTours) {
+            if (data.isStopRequested())
+                break;
             ArcSetter setter = new ArcSetter(this.Nodes[0], null, gt);
             this.ArcsSetters.add(setter);
             this.phaser.register();
@@ -72,7 +74,9 @@ public class AuxiliaryGraph {
      * @param node the node whose outgoing arcs should be scheduled
      */
     private void setNewSetters(AuxiliaryGraphNode node) {
-        if (node.NodeIndex == this.Length)
+        // A stopped run spawns no further arcs: the setters still in flight drain, the
+        // phaser advances, and the constructor returns instead of exploring the graph.
+        if (node.NodeIndex == this.Length || this.Data.isStopRequested())
             return;
         node.Lock.lock();
         try {
@@ -160,7 +164,9 @@ public class AuxiliaryGraph {
                 int cumulative_demand = 0;
                 double cumulative_distance = 0d;
                 final List<Integer> sequence_as_list = new LinkedList<>();
-                while (i < AuxiliaryGraph.this.Length) {
+                // Setters already queued in the pool when the stop arrived would otherwise each
+                // walk the whole tour running local search, so the walk checks the flag too.
+                while (i < AuxiliaryGraph.this.Length && !AuxiliaryGraph.this.Data.isStopRequested()) {
                     length++;
                     AuxiliaryGraphNode EndingNode = AuxiliaryGraph.this.getNode(++i);
                     if (this.Solution != null && this.Solution.getTotalDistance() >= EndingNode.getLabel()) {

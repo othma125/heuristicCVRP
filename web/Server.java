@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -191,6 +193,18 @@ public class Server {
     private static void solveLocked(File instance, OutputStream out) throws IOException {
         PrintStream original = System.out;
         System.setOut(new PrintStream(new SseLineStream(out), true, StandardCharsets.UTF_8));
+        ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor();
+        // The solver only prints on improvement, so it can run silent for minutes and never
+        // notice a closed tab. Ping instead: a failed write means nobody is listening.
+        watchdog.scheduleWithFixedDelay(() -> {
+            try {
+                sse(out, "ping", "");
+            } catch (IOException hungUp) {
+                GeneticAlgorithm algorithm = currentAlgo;
+                if (algorithm != null)
+                    algorithm.requestStop();
+            }
+        }, 5, 5, TimeUnit.SECONDS);
         try {
             InputData data = new InputData(instance.getPath().replace("\\", "//"));
             GeneticAlgorithm algo = new GeneticAlgorithm(data);
@@ -212,6 +226,7 @@ public class Server {
             sse(out, "log", "ERROR: " + e.getMessage());
             sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
         } finally {
+            watchdog.shutdownNow();
             currentAlgo = null;
             out.close();
         }
@@ -394,8 +409,11 @@ public class Server {
         for (String line : data.split("\n", -1))
             sb.append("data: ").append(line).append('\n');
         sb.append('\n');
-        out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-        out.flush();
+        // Locked so the watchdog's ping cannot interleave with a solver log line.
+        synchronized (out) {
+            out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        }
     }
 
     /**

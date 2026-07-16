@@ -232,6 +232,10 @@ Then open `http://localhost:<port>`. Features:
   and the colored routes appear automatically once solving ends — with a **Route**
   selector to focus on a single route (all routes by default)
 - Author profile and approach description sections
+- **Closing the tab stops the solve**: the server pings the browser every 5s, and a failed
+  ping stops the solver. Without it an abandoned run kept a core busy and held the solve
+  lock, so the next solve blocked until it finished. **Stop** works the same way, and both
+  keep the best solution found so far
 
 Run the server from the project root so it can find `.env`, `Algorithm/CVRPLib/`, `Web/` and `profile.jpg`.
 
