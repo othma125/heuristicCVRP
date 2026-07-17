@@ -122,7 +122,7 @@ Moves implemented:
 - Left Shift
 - Right Shift
 
-Local search is executed **inside the auxiliary graph context**, allowing high-quality improvements without breaking feasibility.
+Local search is executed **inside the auxiliary graph context**, allowing high-quality improvements without breaking feasibility. The intra-route local search is applied **lazily** — skipped whenever it cannot change the label chosen for a split node — to avoid redundant work during decoding.
 
 ---
 

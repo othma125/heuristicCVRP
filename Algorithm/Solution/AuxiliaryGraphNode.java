@@ -36,13 +36,15 @@ public class AuxiliaryGraphNode {
      *                     or {@code null} for the source
      * @param new_route    the route appended to reach this node
      */
-    void UpdateLabel(Solution old_solution, Route new_route) {
+    boolean UpdateLabel(Solution old_solution, Route new_route) {
         if (new_route == null)
-            return;
+            return false;
+        boolean c = false;
         this.Lock.lock();
         try {
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
             if (label < this.getLabel()) {
+                c = this.getLabel() < Double.POSITIVE_INFINITY;
                 Solution newSolution = new Solution(label, old_solution == null ? 1 : old_solution.getRoutesCount() + 1);
                 if(old_solution != null)
                     for(Route route : old_solution.getRoutes())
@@ -53,6 +55,7 @@ public class AuxiliaryGraphNode {
         } finally {
             this.Lock.unlock();
         }
+        return c;
     }
 
     /**

@@ -191,8 +191,10 @@ public class AuxiliaryGraph {
                     Route new_route = new Route(sequence_as_array, cumulative_demand, cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.get(sequence_as_list.size() - 1)));
                     if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()
                         && cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
-                        new_route.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
-                        EndingNode.UpdateLabel(this.Solution, new_route);
+                        if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
+                            new_route.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+                            EndingNode.UpdateLabel(this.Solution, new_route);
+                        }
                     }
                     boolean c = true;
                     if (this.Solution != null) 
