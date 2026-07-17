@@ -34,7 +34,7 @@ public class AuxiliaryGraph {
     private final AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
-    private final ForkJoinPool Pool = ForkJoinPool.commonPool();
+    private static final ForkJoinPool Pool = ForkJoinPool.commonPool();
     private final Phaser phaser = new Phaser(1);
 
     /**
