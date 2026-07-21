@@ -23,7 +23,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private final GiantTour[] Population;
     private final int PopulationSize;
     private final int TournamentSize = 5;
-    private static final int MAX_POPULATION_FAILURES = 100;
+    private static final int MAX_ALLOWED_FAILURES = 100;
 
     
     /**
@@ -140,7 +140,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
             do {
                 this.Population[i] = new GiantTour(this.Data);
                 failure_count++;
-            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < MAX_POPULATION_FAILURES) && !this.isStopRequested());
+            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < MAX_ALLOWED_FAILURES) && !this.isStopRequested());
             if (i == 0 && !this.Population[0].isFeasible())
                 return;
             this.setBestSolution(this.Population[i]);
