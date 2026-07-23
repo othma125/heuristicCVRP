@@ -88,7 +88,9 @@ public class AuxiliaryGraph {
                 }
             if (allMatch) 
                 for (Solution solution : node.getSolutions()) 
-                    if (solution.getTotalDistance() < this.Bound) 
+                    // if (solution.getTotalDistance() >= this.Bound || Math.random() < 0.1d) 
+                        // solution.InterRoutesLocalSearch(this.Data);
+                    if (solution.getTotalDistance() < this.Bound)
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(node, solution, gt);
                             this.ArcsSetters.add(setter);
@@ -125,28 +127,6 @@ public class AuxiliaryGraph {
             this.NodeProcessingWith = this.StartingNode.NodeIndex;
         }
 
-        @Override
-        public int hashCode() {
-            int hash = this.StartingNode.NodeIndex;
-            if (AuxiliaryGraph.this.GiantTours.length > 1)
-                hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
-            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null || getClass() != obj.getClass())
-                return false;
-            ArcSetter other = (ArcSetter) obj;
-            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
-                return false;
-            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
-                return false;
-            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
-        }
-
         /**
          * Walks forward from the starting node, accumulating stops into a
          * candidate route and, at each reachable node, relaxing its label with
@@ -175,15 +155,12 @@ public class AuxiliaryGraph {
                     }
                     while (sequence_as_list.size() < length) {
                         int stop = this.GiantTour.getStop(j++ % AuxiliaryGraph.this.Length);
-
                         if (this.Solution == null || !this.Solution.contains(stop)) {
                             cumulative_demand += AuxiliaryGraph.this.Data.getDemand(stop);
-
                             if (sequence_as_list.isEmpty())
                                 cumulative_distance += AuxiliaryGraph.this.Data.getDepotToStopDistance(stop);
                             else
                                 cumulative_distance += AuxiliaryGraph.this.Data.getTwoStopsDistance(sequence_as_list.get(sequence_as_list.size() - 1), stop);
-
                             sequence_as_list.add(stop);
                         }
                     }
@@ -191,16 +168,17 @@ public class AuxiliaryGraph {
                     Route new_route = new Route(sequence_as_array, cumulative_demand, cumulative_distance + AuxiliaryGraph.this.Data.getStopToDepotDistance(sequence_as_list.get(sequence_as_list.size() - 1)));
                     if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()
                         && cumulative_demand <= AuxiliaryGraph.this.Data.getCapacity()) {
-                        // if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
-                        new_route.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
-                        EndingNode.UpdateLabel(this.Solution, new_route);
-                        // }
+                        if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
+                            new_route.IntraRoutesLocalSearch(AuxiliaryGraph.this.Data);
+                            EndingNode.UpdateLabel(this.Solution, new_route);
+                        }
                     }
                     boolean c = true;
                     if (this.Solution != null) 
                         for (Route old_route : this.Solution.getRoutes()) {
                             final int combined_demand = old_route.getSumDemand() + cumulative_demand;
-                            if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
+                            if (combined_demand <= AuxiliaryGraph.this.Data.getCapacity()
+                                && this.Solution.getRoutesCount() <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                                 int[] combined_sequence1 = new int[old_route.getLength() + length];
                                 for (int index = 0; index < combined_sequence1.length; index++) {
                                     if (index < old_route.getLength())
@@ -226,13 +204,14 @@ public class AuxiliaryGraph {
                                     EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                                 }
                             }
-                            if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity() && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
+                            if (combined_demand <= 2 * AuxiliaryGraph.this.Data.getCapacity()
+                                && this.Solution.getRoutesCount() + 1 <= AuxiliaryGraph.this.Data.getMaxVehicleNumber()) {
                                 c = false;
                                 LocalSearchMove lsm = old_route.getLSM(AuxiliaryGraph.this.Data, new_route);
                                 if (lsm != null) {
                                     lsm.Perform(AuxiliaryGraph.this.Data);
                                     EndingNode.UpdateLabel(AuxiliaryGraph.this.Data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
-                                    break;
+                                    // break;
                                 }
                             }
                         }
@@ -249,6 +228,28 @@ public class AuxiliaryGraph {
                 AuxiliaryGraph.this.phaser.arriveAndDeregister();
                 AuxiliaryGraph.this.ArcsSetters.remove(this);
             }
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = this.StartingNode.NodeIndex;
+            if (AuxiliaryGraph.this.GiantTours.length > 1)
+                hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
+            return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            ArcSetter other = (ArcSetter) obj;
+            if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
+                return false;
+            if (AuxiliaryGraph.this.GiantTours.length > 1 && this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
+                return false;
+            return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
         }
     }
 

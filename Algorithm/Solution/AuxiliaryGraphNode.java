@@ -43,14 +43,17 @@ public class AuxiliaryGraphNode {
         this.Lock.lock();
         try {
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
-            if (label < this.getLabel()) {
+            if (label < this.getLabel() || (old_solution != null && old_solution.getRoutesCount() + 1 < this.getRoutesCount())) {
                 c = this.getLabel() < Double.POSITIVE_INFINITY;
                 Solution newSolution = new Solution(label, old_solution == null ? 1 : old_solution.getRoutesCount() + 1);
                 if(old_solution != null)
                     for(Route route : old_solution.getRoutes())
                         newSolution.add(route);
                 newSolution.add(new_route);
-                this.Solutions.addFirst(newSolution);
+                if (label < this.getLabel()) 
+                    this.Solutions.addFirst(newSolution);
+                else
+                    this.Solutions.add(newSolution);
             }
         } finally {
             this.Lock.unlock();
@@ -116,11 +119,9 @@ public class AuxiliaryGraphNode {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             if (label < this.getLabel()) {
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
-                for (Route route : old_solution.getRoutes()) {
-                    if (route != old_route) {
+                for (Route route : old_solution.getRoutes()) 
+                    if (route != old_route) 
                         newSolution.add(route);
-                    }
-                }
                 newSolution.add(route1);
                 newSolution.add(route2);
                 this.Solutions.addFirst(newSolution);
