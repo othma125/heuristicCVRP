@@ -53,8 +53,12 @@ HEURISTICCVRP
 │   │       └── LocalSearchMove.java
 │   ├── main.java         # Entry point (single instance run)
 │   └── benchmark.java    # Entry point (batch run + .csv benchmark gap)
-├── Web/                  # web.Server package + landing page
-│   ├── Server.java
+├── Web/                  # landing page + web.server package
+│   ├── server/           # web.server package (JDK HttpServer, no dependencies)
+│   │   ├── Server.java     # Bootstrap + route table
+│   │   ├── Http.java       # HTTP/SSE transport helpers
+│   │   ├── Instances.java  # Read-only CVRPLIB dataset access
+│   │   └── Solver.java     # /api/solve (SSE) and /api/stop
 │   ├── index.html
 │   ├── app.js
 │   └── styles.css
@@ -206,12 +210,12 @@ tools or dependencies (uses the JDK's built-in HTTP server).
 
 ```bash
 bash run-server.sh             # compiles then starts the server
-bash kill-server.sh            # stops any running web.Server process
+bash kill-server.sh            # stops any running web.server.Server process
 # or run the compiled class directly:
-java -cp out web.Server        # port resolution order below
+java -cp out web.server.Server        # port resolution order below
 ```
 
-Port resolution: a CLI argument (`java -cp out web.Server 9090`) wins; otherwise the
+Port resolution: a CLI argument (`java -cp out web.server.Server 9090`) wins; otherwise the
 `PORT` value from the `.env` file at the project root is used; otherwise it defaults
 to `8080`. Copy `.env.example` to `.env` to change it without touching code.
 

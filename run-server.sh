@@ -11,4 +11,4 @@ javac -encoding UTF-8 -d out $(find . -name '*.java' ! -path './out/*' ! -path '
 port="${1:-$(grep -oP '^PORT=\K.*' .env 2>/dev/null || echo 8081)}"
 (sleep 2 && start "" "http://localhost:$port") &
 
-java -cp out web.Server "$@"
+java -cp out web.server.Server "$@"
