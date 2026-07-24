@@ -192,8 +192,13 @@ public class AuxiliaryGraphNode {
             int[] seq = null;
             this.Lock.lock();
             try {
-                this.getBestSolution().InterRoutesLocalSearch(data);
-                seq = this.getBestSolution().getNewSequence();
+                Solution best = this.getBestSolution();
+                for (Solution s : this.getSolutions()) {
+                    s.InterRoutesLocalSearch(data);
+                    if (s.getTotalDistance() < best.getTotalDistance()) 
+                        best = s;
+                }
+                seq = best.getNewSequence();
             } finally {
                 this.Lock.unlock();
             }
