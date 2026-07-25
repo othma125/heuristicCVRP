@@ -93,8 +93,8 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     private void Split(InputData data, double bound, int feasibility_index) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
-            if (this.AuxiliaryGraph != null)
-                this.AuxiliaryGraph.close();
+            // Don't close the old graph: a setBestSolution snapshot may still share it
+            // (the copy constructor copies the reference, not the graph). Let GC reclaim it.
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
