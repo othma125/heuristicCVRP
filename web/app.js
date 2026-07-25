@@ -194,7 +194,7 @@ function drawRoutes(coords, routes, visible) {
     if (visible && !visible.has(k)) return; // visible: null = all, else Set of route indices
     ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = visible && visible.size === 1 ? 2.4 : 1.6;
     ctx.beginPath(); ctx.moveTo(tx(depot[0]), ty(depot[1]));
-    for (const id of route) { const c = coords[id]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); }
+    for (const id of route) { const c = coords[id + 1]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); } // .sol id n = .vrp node n+1 (depot=1)
     ctx.lineTo(tx(depot[0]), ty(depot[1])); ctx.stroke();
   });
   // customers
