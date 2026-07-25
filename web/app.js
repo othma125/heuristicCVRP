@@ -5,6 +5,9 @@ let solution = null; // {routes, cost}
 let coords = null;
 const PALETTE = ["#4f9cf9","#3fb950","#f0883e","#db61a2","#a371f7","#e3b341","#39c5cf","#f85149"];
 let vizShown = false; // the map/checklist appear only after the first Visualize click
+// refreshed by drawRoutes, in CSS px — feed the hover tooltip
+let hoverPts = []; // [{id, x, y}]
+let hoverSegs = []; // [{k, d, x1, y1, x2, y2}] for the drawn route legs only
 
 // theme (dark default, persisted)
 if (localStorage.theme) document.documentElement.dataset.theme = localStorage.theme;
@@ -189,13 +192,22 @@ function drawRoutes(coords, routes, visible) {
   const tx = x => pad + (x - minX) * s;
   const ty = y => cssH - pad - (y - minY) * s; // flip Y
   const depot = coords[1]; // node 1 = depot
+  hoverPts = ids.map(id => ({ id, x: tx(coords[id][0]), y: ty(coords[id][1]) }));
 
+  hoverSegs = [];
   routes.forEach((route, k) => {
     if (visible && !visible.has(k)) return; // visible: null = all, else Set of route indices
     ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = visible && visible.size === 1 ? 2.4 : 1.6;
-    ctx.beginPath(); ctx.moveTo(tx(depot[0]), ty(depot[1]));
-    for (const id of route) { const c = coords[id + 1]; if (c) ctx.lineTo(tx(c[0]), ty(c[1])); } // .sol id n = .vrp node n+1 (depot=1)
-    ctx.lineTo(tx(depot[0]), ty(depot[1])); ctx.stroke();
+    const pts = [depot, ...route.map(id => coords[id + 1]).filter(Boolean), depot]; // .sol id n = .vrp node n+1 (depot=1)
+    ctx.beginPath(); ctx.moveTo(tx(pts[0][0]), ty(pts[0][1]));
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      ctx.lineTo(tx(b[0]), ty(b[1]));
+      // rounded euclidean, matching InputData.euclidean so leg costs sum to the reported cost
+      hoverSegs.push({ k, d: Math.round(Math.hypot(b[0] - a[0], b[1] - a[1])),
+                       x1: tx(a[0]), y1: ty(a[1]), x2: tx(b[0]), y2: ty(b[1]) });
+    }
+    ctx.stroke();
   });
   // customers
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--muted");
@@ -203,5 +215,25 @@ function drawRoutes(coords, routes, visible) {
   // depot
   ctx.fillStyle = "#f85149"; ctx.beginPath(); ctx.arc(tx(depot[0]), ty(depot[1]), 6, 0, 7); ctx.fill();
 }
+
+// perpendicular distance from (x,y) to segment s, clamped to its endpoints
+function segDist(s, x, y) {
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+  const t = Math.max(0, Math.min(1, ((x - s.x1) * dx + (y - s.y1) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(x - s.x1 - t * dx, y - s.y1 - t * dy);
+}
+
+// hover tooltip: node within 8 px wins, else route leg within 5 px (.sol id n = .vrp node n+1)
+$("canvas").onmousemove = e => {
+  const tip = $("tip"), r = e.target.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const p = hoverPts.find(p => Math.hypot(p.x - x, p.y - y) < 8);
+  const s = !p && hoverSegs.find(s => segDist(s, x, y) < 5);
+  if (!p && !s) { tip.style.display = "none"; return; }
+  tip.textContent = p ? (p.id === 1 ? "Depot" : "Stop " + (p.id - 1)) : `Route ${s.k + 1} — ${s.d}`;
+  tip.style.left = (e.pageX + 12) + "px"; tip.style.top = (e.pageY + 12) + "px";
+  tip.style.display = "block";
+};
+$("canvas").onmouseleave = () => $("tip").style.display = "none";
 
 loadFolders();
