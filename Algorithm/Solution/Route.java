@@ -18,11 +18,12 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author Othmane EL YAAKOUBI
  */
-public final class Route implements Comparable<Route> {
+public final class Route implements Comparable<Route>, AutoCloseable {
 
-    private final int[] Sequence;
+    private int[] Sequence;
     private int SumDemand;
     private double TraveledDistance;
+    private boolean isClosed = false;
 
     @Override
     public int hashCode() {
@@ -407,5 +408,19 @@ public final class Route implements Comparable<Route> {
     public void RightShift(int i, int j, int degree, boolean _2opt) {
         for (int k = 0; k <= degree; k++)
             new Move(_2opt ? i : i + k, j + k).RightShift(this.Sequence);
+    }
+
+    /**
+     * Releases the route by dropping its stop sequence. Idempotent: a second
+     * call is a no-op. After closing, methods that read the sequence must not
+     * be called.
+     */
+    @Override
+    public void close() {
+        if (this.isClosed)
+            return;
+        // No resources to release
+        this.Sequence = null;
+        this.isClosed = true;
     }
 }

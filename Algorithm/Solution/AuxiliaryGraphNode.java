@@ -6,6 +6,7 @@ import Algorithm.Data.InputData;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Comparator;
 
 /**
  * A node of the {@link AuxiliaryGraph}, representing a position in the giant
@@ -15,7 +16,7 @@ import java.util.LinkedList;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class AuxiliaryGraphNode {
+public class AuxiliaryGraphNode implements AutoCloseable {
 
     private final List<Solution> Solutions = new LinkedList<>();
     final ReentrantLock Lock = new ReentrantLock();
@@ -192,18 +193,33 @@ public class AuxiliaryGraphNode {
             int[] seq = null;
             this.Lock.lock();
             try {
-                Solution best = this.getBestSolution();
-                for (Solution s : this.getSolutions()) {
-                    s.InterRoutesLocalSearch(data);
-                    if (s.getTotalDistance() < best.getTotalDistance()) 
-                        best = s;
-                }
+                this.getSolutions().parallelStream().forEach(s -> s.InterRoutesLocalSearch(data));
+                Solution best = this.getSolutions().stream()
+                                                    .min(Comparator.comparingDouble(Solution::getTotalDistance))
+                                                    .get();
                 seq = best.getNewSequence();
+                this.Solutions.addFirst(best);
             } finally {
                 this.Lock.unlock();
             }
             return seq;
         }
         return null;
+    }
+
+    /**
+     * Releases the node by closing all of its solutions and clearing the list.
+     * Guarded by the node {@link #Lock} since the graph is built concurrently.
+     */
+    @Override
+    public void close() {
+        this.Lock.lock();
+        try {
+            for (Solution solution : this.Solutions)
+                solution.close();
+            this.Solutions.clear();
+        } finally {
+            this.Lock.unlock();
+        }
     }
 }

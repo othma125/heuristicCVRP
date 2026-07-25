@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class GiantTour implements Comparable<GiantTour> {
+public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
 
     public int[] Sequence;
     public AuxiliaryGraph AuxiliaryGraph = null;
@@ -93,6 +93,8 @@ public class GiantTour implements Comparable<GiantTour> {
     private void Split(InputData data, double bound, int feasibility_index) {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
         if (graph.isFeasible()) {
+            if (this.AuxiliaryGraph != null)
+                this.AuxiliaryGraph.close();
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
@@ -102,6 +104,7 @@ public class GiantTour implements Comparable<GiantTour> {
             int k = 0;
             while (graph.getNode(++k).isFeasible()) {}
             int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
+            graph.close();
             System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
             if (k > feasibility_index) {
                 for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
@@ -211,5 +214,16 @@ public class GiantTour implements Comparable<GiantTour> {
             bw.write("Cost " + (int) this.getFitness());
             bw.newLine();
         }
+    }
+
+    /**
+     * Releases the giant tour by closing its auxiliary graph, if any, and
+     * dropping the sequence.
+     */
+    @Override
+    public void close() {
+        if (this.AuxiliaryGraph != null)
+            this.AuxiliaryGraph.close();
+        this.Sequence = null;
     }
 }

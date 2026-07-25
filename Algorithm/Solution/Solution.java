@@ -19,7 +19,7 @@ import java.util.ArrayList;
  *
  * @author Othmane EL YAAKOUBI
  */
-public final class Solution implements Comparable<Solution> {
+public final class Solution implements Comparable<Solution>, AutoCloseable {
 
     private final Set<Route> Routes;
     private final Set<Integer> Stops;
@@ -27,8 +27,7 @@ public final class Solution implements Comparable<Solution> {
 
     /**
      * @param distance the initial total travelled distance
-     * @param capacity the expected number of routes, used to size the backing
-     *                 set
+     * @param capacity the expected number of routes, used to size the backing set
      */
     Solution(double distance, int capacity) {
         this.TotalDistance = distance;
@@ -45,11 +44,11 @@ public final class Solution implements Comparable<Solution> {
      * @param data the problem instance providing distances and capacity
      */
     void InterRoutesLocalSearch(InputData data) {
-        this.Routes.forEach(r -> {
-            double old_distance = r.getTraveledDistance();
-            r.IntraRoutesLocalSearch(data);
-            this.TotalDistance += r.getTraveledDistance() - old_distance;
-        });
+        // this.Routes.forEach(r -> {
+        //     double old_distance = r.getTraveledDistance();
+        //     r.IntraRoutesLocalSearch(data);
+        //     this.TotalDistance += r.getTraveledDistance() - old_distance;
+        // });
         for (Route r1 : this.Routes) 
             for (Route r2 : this.Routes) 
                 if (r1 != r2) {
@@ -121,16 +120,13 @@ public final class Solution implements Comparable<Solution> {
      * @return the concatenated stop sequence
      */
     int[] getNewSequence() {
-        List<Integer> combinedSequence = new ArrayList<>();
+        int[] result = new int[this.Stops.size()];
+        int index = 0;
         for (Route route : this.Routes) {
             int[] routeSequence = route.getSequence();
-            for (int stop : routeSequence) {
-                combinedSequence.add(stop);
-            }
+            for (int stop : routeSequence) 
+                result[index++] = stop;
         }
-        int[] result = new int[combinedSequence.size()];
-        for (int i = 0; i < result.length; i++) 
-            result[i] = combinedSequence.get(i);
         return result;
     }
 
@@ -177,5 +173,18 @@ public final class Solution implements Comparable<Solution> {
     @Override
     public int compareTo(Solution sol) {
         return Double.compare(this.TotalDistance * 100d, sol.TotalDistance * 100d);
+    }
+
+    /**
+     * Releases the solution by closing all of its routes and clearing the route
+     * and stop sets. Because routes may be shared with other solutions, do not
+     * close a solution whose routes are still in use elsewhere.
+     */
+    @Override
+    public void close() {
+        for (Route route : this.Routes)
+            route.close();
+        this.Routes.clear();
+        this.Stops.clear();
     }
 }

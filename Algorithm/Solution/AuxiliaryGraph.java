@@ -26,12 +26,12 @@ import java.util.concurrent.Phaser;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class AuxiliaryGraph {
+public class AuxiliaryGraph implements AutoCloseable {
 
     private final int Length;
     private final double Bound;
     private final GiantTour[] GiantTours;
-    private final AuxiliaryGraphNode[] Nodes;
+    private AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
     private static final ForkJoinPool Pool = ForkJoinPool.commonPool();
@@ -311,5 +311,19 @@ public class AuxiliaryGraph {
     @Override
     public String toString() {
         return this.getLastNode().toString();
+    }
+
+    /**
+     * Releases the graph by closing all of its nodes and dropping the node
+     * array. Runs on a background thread so the caller does not block on the
+     * teardown of a large graph.
+     */
+    @Override
+    public void close() {
+        new Thread(() -> {
+            for (AuxiliaryGraphNode node : this.Nodes)
+                node.close();
+            this.Nodes = null;
+        }).start();
     }
 }

@@ -118,13 +118,15 @@ public class GeneticAlgorithm extends MetaHeuristic {
             int half = this.PopulationSize / 2;
             int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
             if (this.setBestSolution(newGiantTour)) {
-                c = true;
                 GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
                 this.UpdatePopulation(graph_crossover);
+                c = true;
             }
             this.Population[randomIndex] = newGiantTour;
             Arrays.sort(this.Population);
         }
+        else
+            newGiantTour.close();
         return c;
     }
     
@@ -138,6 +140,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
         for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++) {
             int failure_count = 0;
             do {
+                if (this.Population[i] != null)
+                    this.Population[i].close();
                 this.Population[i] = new GiantTour(this.Data);
                 failure_count++;
             } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < MAX_ALLOWED_FAILURES) && !this.isStopRequested());
