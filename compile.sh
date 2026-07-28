@@ -1,13 +1,7 @@
 #!/bin/bash
 
 # Compile all Java files in the project
+rm -rf out
 mkdir -p out
-javac -d out -sourcepath Algorithm:Web \
-    Algorithm/Data/*.java \
-    Algorithm/Metaheuristics/*.java \
-    Algorithm/Solution/*.java \
-    Algorithm/Solution/LSM/*.java \
-    Web/server/*.java \
-    Algorithm/main.java \
-    Algorithm/benchmark.java \
-    campaign.java
+javac -encoding UTF-8 -d out -sourcepath Algorithm:Web \
+    $(find . -name '*.java' ! -path './out/*' ! -path './.git/*' ! -path './Algorithm/CVRPLib/*' ! -path './Output/*') 

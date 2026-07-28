@@ -166,8 +166,7 @@ Distance computation:
 ### Compile
 
 ```bash
-mkdir -p out
-javac -encoding UTF-8 -d out $(find . -name "*.java")
+./compile.sh
 ```
 
 ### Run a single instance

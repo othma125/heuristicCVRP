@@ -47,6 +47,15 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     }
 
     /**
+     * Creates a giant tour from a given sequence.
+     *
+     * @param seq the customer sequence to use
+     */
+    public GiantTour(int[] seq) {
+        this.Sequence = seq;
+    }
+
+    /**
      * Graph-based crossover: builds a giant tour by combining the given parent
      * tours through the auxiliary graph, keeping the best subsequences bounded
      * by the parents' fitness. The result is only feasible if the combined
