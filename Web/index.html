@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heuristic CVRP Solver — Othmane EL YAAKOUBI</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Heuristic CVRP Solver</h1>
+    <div class="sub">Memetic algorithm with graph-based giant-tour decomposition</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a href="https://github.com/othma125/heuristicCVRP" target="_blank" rel="noopener">GitHub</a>
+    <button class="toggle" id="theme">Theme</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Solve an instance</h2>
+    <div class="row">
+      <div>
+        <label>CVRPLIB set — <a href="https://galgos.inf.puc-rio.br/cvrplib/en/instances" target="_blank" rel="noopener">instances</a></label>
+        <select id="folder"></select>
+      </div>
+      <div>
+        <label>Instance</label>
+        <select id="instance"></select>
+      </div>
+      <div style="flex:0;display:flex;gap:10px;align-items:flex-end;">
+        <button class="primary" id="solve" style="background:var(--accent2);border-color:var(--accent2);">Solve</button>
+        <button id="viz" disabled>Visualize</button>
+      </div>
+    </div>
+    <div id="stats"></div>
+    <div id="routeList"></div>
+    <div class="panels">
+      <div>
+        <h3>Solver log</h3>
+        <div id="log">Select an instance and press Solve — the live solver log appears here.</div>
+      </div>
+      <div>
+        <h3>
+          <span>Routes (.sol format)</span>
+          <button id="save" disabled>Save</button>
+        </h3>
+        <pre id="solText">The final routes appear here once the calculation ends.</pre>
+      </div>
+    </div>
+    <canvas id="canvas" width="1040" height="560" style="display:none;"></canvas>
+    <div id="saveBar" style="display:none;margin-top:12px;">
+      <button id="saveImg">Save image</button>
+      <select id="imgExt" style="margin-left:8px;">
+        <option value="jpg">.jpg</option>
+        <option value="png">.png</option>
+        <option value="webp">.webp</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="approach">
+    <h2>The approach</h2>
+    <p><em>Graph-Based Genetic Optimization for Vehicle Routing via Giant Tour Decomposition.</em>
+    Classical GA crossovers copy contiguous segments syntactically and enforce feasibility with costly
+    repair. This solver instead operates on <b>giant tours</b> (a permutation of all customers with no
+    route delimiters) and defers feasibility to a graph-theoretic splitting step.</p>
+    <h3>Giant tour representation</h3>
+    <p>The GA evolves a population of giant tours with selection and mutation. Fitness is never evaluated on
+    the tour directly — each individual is decoded into a feasible CVRP solution via the split.</p>
+    <h3>Graph-based split into feasible routes</h3>
+    <p>For each tour a directed acyclic graph models every feasible split: an arc <i>i→j</i> is a route
+    covering customers <i>i+1…j</i> within vehicle capacity, weighted by its exact routing cost (depot
+    connections included). Optimal splitting reduces to a <b>shortest path</b> on this graph.</p>
+    <h3>Crossover &amp; embedded local search</h3>
+    <p>Classical cut-point crossover is replaced by a <b>shortest-path-driven inheritance</b> mechanism: the
+    graph explicitly decides which components each parent contributes. Intra- and inter-route local search
+    (2-opt, swap, left/right shift) runs <b>inside</b> the graph rather than as a separate phase. Built in
+    Java 23 with multi-threaded graph construction and evaluation.</p>
+  </section>
+
+  <section>
+    <h2>About the author</h2>
+    <div class="profile">
+      <img src="/assets/profile.jpg" alt="Othmane EL YAAKOUBI">
+      <div>
+        <b>Othmane EL YAAKOUBI</b> — Operations Research Expert &amp; Backend Developer<br>
+        <span class="sub">Metaheuristics · Vehicle Routing &amp; Scheduling · Large-scale optimization</span>
+        <ul>
+          <li>Memetic algorithms for TSP and CVRP; mathematical models for EV routing and train dispatching.</li>
+          <li>Urban transit optimization (M'DINA BUS, Casablanca): +22% daily revenue via genetic algorithm, delivered in Java.</li>
+          <li>Manufacturing layout &amp; scheduling (UTT, Troyes): GA + ant colony and NSGA-II bi-objective scheduling.</li>
+          <li>Tooling: Cplex, Gurobi, Pulp, scikit-learn, PyTorch · C/C++, Java, Python, SQL · Flask, SQLAlchemy, Redis.</li>
+          <li>Languages: Arabic (native), English &amp; French (full professional).</li>
+        </ul>
+        <a href="mailto:othma125@gmail.com">othma125@gmail.com</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- hover tooltip, kept at body level so page coordinates apply -->
+<div id="tip" style="display:none;position:absolute;pointer-events:none;padding:2px 6px;border-radius:4px;
+  background:var(--bg);border:1px solid var(--muted);font-size:12px;white-space:nowrap;"></div>
+<script src="/app.js"></script>
+</body>
+</html>

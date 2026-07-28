@@ -22,6 +22,9 @@ public abstract class MetaHeuristic {
     private GiantTour BestGiantTour = null;
     public final long StagnationMinTime;
 
+    /** Incumbent trace: one {time_ms_since_StartTime, cost} pair per improvement. */
+    public final java.util.List<long[]> Trace = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
 
     /**
      * @param data the problem instance to solve
@@ -43,6 +46,7 @@ public abstract class MetaHeuristic {
             this.BestSolutionReachingTime = System.currentTimeMillis();
             this.BestGiantTour = new GiantTour(new_gt);
             System.out.println(this.BestGiantTour.getFitness() + " after " + (this.BestSolutionReachingTime  - this.StartTime) + " ms");
+            this.Trace.add(new long[]{this.BestSolutionReachingTime - this.StartTime, (long) this.BestGiantTour.getFitness()});
             return true;
         }
         return false;
