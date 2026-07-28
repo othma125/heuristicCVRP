@@ -43,8 +43,7 @@ public class AuxiliaryGraph implements AutoCloseable {
      *
      * @param data        the problem instance
      * @param bound       cost upper bound used to prune partial solutions
-     * @param giant_tours one or more tours to split (more than one enables the
-     *                    graph-based crossover)
+     * @param giant_tours one or more tours to split (more than one enables the graph-based crossover)
      */
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
         this.Data = data;
@@ -61,9 +60,13 @@ public class AuxiliaryGraph implements AutoCloseable {
             ArcSetter setter = new ArcSetter(this, this.Nodes[0], null, gt);
             this.ArcsSetters.add(setter);
             this.phaser.register();
-            this.Pool.execute(setter);
+            AuxiliaryGraph.Pool.execute(setter);
         }
         this.phaser.arriveAndAwaitAdvance();
+        if (this.isFeasible())
+            this.getLastNode().getSolutions()
+                                .parallelStream()
+                                .forEach(s -> s.InterRoutesLocalSearch(data));
     }
 
     /**
@@ -93,7 +96,7 @@ public class AuxiliaryGraph implements AutoCloseable {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
                             this.ArcsSetters.add(setter);
                             this.phaser.register();
-                            this.Pool.execute(setter);
+                            AuxiliaryGraph.Pool.execute(setter);
                         }
         } finally {
             node.Lock.unlock();

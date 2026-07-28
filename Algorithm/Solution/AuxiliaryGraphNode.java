@@ -136,7 +136,9 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @return the current best (lowest-cost) solution reaching this node
      */
     Solution getBestSolution() {
-        return this.Solutions.getFirst();
+        return this.getSolutions().stream()
+                                    .min(Comparator.comparingDouble(Solution::getTotalDistance))
+                                    .get();
     }
 
     /**
@@ -194,11 +196,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             this.Lock.lock();
             try {
                 this.getSolutions().parallelStream().forEach(s -> s.InterRoutesLocalSearch(data));
-                Solution best = this.getSolutions().stream()
-                                                    .min(Comparator.comparingDouble(Solution::getTotalDistance))
-                                                    .get();
-                seq = best.getNewSequence();
-                this.Solutions.addFirst(best);
+                seq = this.getBestSolution().getNewSequence();
             } finally {
                 this.Lock.unlock();
             }
