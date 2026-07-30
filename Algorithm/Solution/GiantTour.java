@@ -27,18 +27,6 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     public AuxiliaryGraph AuxiliaryGraph = null;
 
     /**
-     * Snapshot copy: captures the tour's current sequence and split.
-     * {@link #Split(InputData)} replaces those fields rather than mutating
-     * them, so re-splitting {@code gt} leaves this copy untouched.
-     *
-     * @param gt the giant tour to snapshot
-     */
-    // public GiantTour(GiantTour gt) {
-    //     this.Sequence = gt.Sequence == null ? null : gt.Sequence.clone();
-    //     this.AuxiliaryGraph = gt.AuxiliaryGraph;
-    // }
-
-    /**
      * Creates a random giant tour and immediately splits it into routes.
      *
      * @param data the problem instance
