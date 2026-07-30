@@ -7,8 +7,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 /**
  * The chromosome of the genetic algorithm: a permutation of all customers with
@@ -31,10 +33,10 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      *
      * @param gt the giant tour to snapshot
      */
-    public GiantTour(GiantTour gt) {
-        this.Sequence = gt.Sequence == null ? null : gt.Sequence.clone();
-        this.AuxiliaryGraph = gt.AuxiliaryGraph;
-    }
+    // public GiantTour(GiantTour gt) {
+    //     this.Sequence = gt.Sequence == null ? null : gt.Sequence.clone();
+    //     this.AuxiliaryGraph = gt.AuxiliaryGraph;
+    // }
 
     /**
      * Creates a random giant tour and immediately splits it into routes.
@@ -67,16 +69,15 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     public GiantTour(InputData data, GiantTour ... giant_tours) {
         double bound = Double.NEGATIVE_INFINITY;
         for (GiantTour gt : giant_tours) 
-            if (gt.isFeasible()) {
-                double fitness = gt.getFitness();
-                if (fitness > bound) 
-                    bound = fitness;
-            }
+            if (gt.isFeasible() && gt.getFitness() > bound) 
+                bound = gt.getFitness();
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
+        else
+            graph.close();
     }
     
     /**
@@ -96,32 +97,51 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      *
      * @param data              the problem instance
      * @param bound             cost upper bound used to prune the graph
-     * @param feasibility_index the furthest feasible node reached so far, used
-     *                          to detect and stop non-progressing retries
+     * @param feasibility_index the furthest feasible node reached so far, used to detect and stop non-progressing retries
      */
     private void Split(InputData data, double bound, int feasibility_index) {
-        AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
-        if (graph.isFeasible()) {
-            // Don't close the old graph: a setBestSolution snapshot may still share it
-            // (the copy constructor copies the reference, not the graph). Let GC reclaim it.
-            this.AuxiliaryGraph = graph;
-            this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
-        }
-        // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
-        // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
-        else if (!data.isStopRequested()) {
-            int k = 0;
-            while (graph.getNode(++k).isFeasible()) {}
-            int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
-            graph.close();
-            System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
-            if (k > feasibility_index) {
-                for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
-                    int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
-                    new Move(i, j).Swap(this.Sequence);
+        if (this.AuxiliaryGraph == null) {
+            AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
+            if (graph.isFeasible()) 
+                this.AuxiliaryGraph = graph;
+            // // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
+            // // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
+            else if (!data.isStopRequested()) {
+                int k = 0;
+                while (graph.getNode(++k).isFeasible()) {}
+                int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
+                System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
+                if (k > feasibility_index) {
+                    for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
+                        int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
+                        new Move(i, j).Swap(this.Sequence);
+                    }
+                    this.Split(data, bound, k);
                 }
-                this.Split(data, bound, k);
             }
+            if (!graph.isFeasible())
+                graph.close();
+        }
+        else {
+            var feasibleTours = this.AuxiliaryGraph.getLastNode()
+                                                    .getSolutions()
+                                                    .parallelStream()
+                                                    .map(solution -> new GiantTour(solution.getNewSequence()))
+                                                    .peek(gt -> gt.Split(data, bound, 0))
+                                                    .filter(GiantTour::isFeasible)
+                                                    .collect(Collectors.toList());
+            GiantTour best = feasibleTours.stream()
+                                          .min(Comparator.comparingDouble(GiantTour::getFitness))
+                                          .orElse(null);
+            for (GiantTour gt : feasibleTours) 
+                if (gt != best)
+                    gt.close();
+            if (best != null) {
+                this.Sequence = best.Sequence;
+                this.AuxiliaryGraph.close();
+                this.AuxiliaryGraph = best.AuxiliaryGraph;
+            }
+            feasibleTours.clear();
         }
     }
 

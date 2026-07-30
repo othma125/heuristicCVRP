@@ -52,7 +52,8 @@ HEURISTICCVRP
 │   │       ├── RightShift.java
 │   │       └── LocalSearchMove.java
 │   ├── main.java         # Entry point (single instance run)
-│   └── benchmark.java    # Entry point (batch run + .csv benchmark gap)
+│   ├── benchmark.java    # Entry point (batch run + .csv benchmark gap)
+│   └── campaign.java     # Entry point (loop-until-feasible benchmark campaign)
 ├── Web/                  # landing page + web.server package
 │   ├── server/           # web.server package (JDK HttpServer, no dependencies)
 │   │   ├── Server.java     # Bootstrap + route table
@@ -200,6 +201,24 @@ java -Xmx4g -cp out benchmark
 This solves every `.vrp` instance in the directory (in ascending size order),
 looks up each best-known cost from its `.sol` / `.opt.sol` / `.bst.sol` file,
 and writes a `results <dir>.csv` report with the optimality gap per instance.
+
+### Run a campaign (loop-until-feasible benchmark)
+
+Edit `Algorithm/campaign.java`:
+- Set `INSTANCE_DIR` to the CVRPLIB directory
+- Set `RUNS` (independent runs per instance) and `MAX_ATTEMPTS` (restart cap)
+
+Then run:
+
+```bash
+java -Xmx4g -cp out campaign
+```
+
+For every instance it performs `RUNS` independent runs; each run restarts the GA
+from a fresh random population until it returns a feasible solution (capped at
+`MAX_ATTEMPTS`). It writes per-instance `campaign_out/<instance>/objective_time_series.json`
+traces and a `campaign_out/campaign_summary.csv` report with best cost, known
+optimal, gap, wall-clock time, time-to-solution, and attempt statistics.
 
 ### Landing page (web UI)
 

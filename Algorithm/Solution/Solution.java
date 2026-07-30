@@ -120,14 +120,12 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @return the concatenated stop sequence
      */
     int[] getNewSequence() {
-        int[] result = new int[this.Stops.size()];
+        int[] sequence = new int[this.Stops.size()];
         int index = 0;
-        for (Route route : this.Routes) {
-            int[] routeSequence = route.getSequence();
-            for (int stop : routeSequence) 
-                result[index++] = stop;
-        }
-        return result;
+        for (Route route : this.Routes) 
+            for (int stop : route.getSequence()) 
+                sequence[index++] = stop;
+        return sequence;
     }
 
     @Override

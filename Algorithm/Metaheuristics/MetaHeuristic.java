@@ -6,6 +6,10 @@ package Algorithm.Metaheuristics;
 import Algorithm.Solution.GiantTour;
 import Algorithm.Data.InputData;
 
+import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
+
 /**
  * Base class for metaheuristic solvers. Holds the problem instance, tracks the
  * best giant tour found and the time it was reached, and derives a
@@ -23,7 +27,7 @@ public abstract class MetaHeuristic {
     public final long StagnationMinTime;
 
     /** Incumbent trace: one {time_ms_since_StartTime, cost} pair per improvement. */
-    public final java.util.List<long[]> Trace = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+    public final List<long[]> Trace = Collections.synchronizedList(new ArrayList<>());
 
 
     /**
@@ -44,7 +48,7 @@ public abstract class MetaHeuristic {
     public boolean setBestSolution(GiantTour new_gt) {
         if (this.BestGiantTour == null || new_gt.compareTo(this.BestGiantTour) < 0) {
             this.BestSolutionReachingTime = System.currentTimeMillis();
-            this.BestGiantTour = new GiantTour(new_gt);
+            this.BestGiantTour = new_gt;
             System.out.println(this.BestGiantTour.getFitness() + " after " + (this.BestSolutionReachingTime  - this.StartTime) + " ms");
             this.Trace.add(new long[]{this.BestSolutionReachingTime - this.StartTime, (long) this.BestGiantTour.getFitness()});
             return true;
