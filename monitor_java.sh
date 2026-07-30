@@ -633,11 +633,50 @@ output_data() {
     fi
 }
 
+# Detect the operating system and reject unsupported platforms early.
+# This script relies on the Linux /proc filesystem and GNU coreutils;
+# it will not function on macOS, Windows (native), or BSD variants.
+detect_os() {
+    local os_name
+    os_name=$(uname -s 2>/dev/null)
+
+    case "$os_name" in
+        Linux)
+            return 0
+            ;;
+        Darwin)
+            echo "Error: macOS is not supported. This script requires the Linux /proc filesystem." >&2
+            echo "       On macOS, consider using 'top' or 'Activity Monitor' for Java process monitoring." >&2
+            exit 1
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            echo "Error: Windows (Git Bash / MSYS2 / Cygwin) is not fully supported." >&2
+            echo "       The /proc filesystem is incomplete and many functions will fail." >&2
+            echo "       Options:" >&2
+            echo "         - Run inside WSL (Windows Subsystem for Linux)" >&2
+            echo "         - Use PowerShell with Get-Process / Get-CimInstance instead" >&2
+            exit 1
+            ;;
+        *)
+            if [ -z "$os_name" ]; then
+                echo "Error: Could not detect the operating system (uname -s failed)." >&2
+            else
+                echo "Error: Unsupported operating system: '$os_name'." >&2
+                echo "       This script requires Linux with the /proc filesystem." >&2
+            fi
+            exit 1
+            ;;
+    esac
+}
+
 # Main monitoring loop with improvements
 main() {
+    # Abort immediately on non-Linux platforms before any other work
+    detect_os
+
     # Parse command line arguments
     parse_args "$@"
-    
+
     # Initialize system information
     init_system_info
 
