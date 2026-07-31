@@ -227,7 +227,7 @@ instance, solve it, watch the live solver log, and visualize the routes — no b
 tools or dependencies (uses the JDK's built-in HTTP server).
 
 ```bash
-bash run-server.sh             # compiles then starts the server
+bash run-server.sh             # compiles, starts the server, opens the browser
 bash kill-server.sh            # stops any running web.server.Server process
 # or run the compiled class directly:
 java -cp out web.server.Server        # port resolution order below
