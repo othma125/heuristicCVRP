@@ -1,7 +1,17 @@
 #!/bin/bash
 
-# Compile all Java files in the project
-rm -rf out
+# Compile Java files modified since the last successful build ( --clean forces a full rebuild )
+[ "$1" = "--clean" ] && rm -rf out
 mkdir -p out
-javac -encoding UTF-8 -d out -sourcepath Algorithm:Web \
-    $(find . -name '*.java' ! -path './out/*' ! -path './.git/*' ! -path './Algorithm/CVRPLib/*' ! -path './Output/*') 
+
+stamp=out/.build-stamp
+[ -f "$stamp" ] && newer=(-newer "$stamp")
+
+files=$(find . -name '*.java' ! -path './out/*' ! -path './.git/*' ! -path './Algorithm/CVRPLib/*' ! -path './Output/*' "${newer[@]}")
+
+if [ -z "$files" ]; then
+    echo "Nothing to compile."
+    exit 0
+fi
+
+javac -encoding UTF-8 -d out -cp out -sourcepath Algorithm:Web $files && touch "$stamp"
