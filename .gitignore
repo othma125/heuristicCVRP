@@ -5,6 +5,7 @@ Output/
 *.csv
 
 # Compiled class files
+out/
 *.class
 
 # Local environment (use .env.example as template)
