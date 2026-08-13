@@ -85,10 +85,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
             return this.UpdatePopulation(graph_crossover);
         }
         else if (parent1 == parent2) {
-            GiantTour random;
-            do {
-                random = new GiantTour(this.Data);
-            } while (!random.isFeasible());
+            GiantTour random = new GiantTour(this.Data);
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
             return this.UpdatePopulation(graph_crossover); 
         }
@@ -97,7 +94,13 @@ public class GeneticAlgorithm extends MetaHeuristic {
             parent1.Split(this.Data);
             parent2.Split(this.Data);
             Arrays.sort(this.Population);
-            return this.setBestSolution(parent1) || this.setBestSolution(parent2);
+            boolean c1 = this.setBestSolution(parent1);
+            boolean c2 = this.setBestSolution(parent2);
+            if (c1 || c2) {
+                Arrays.sort(this.Population);
+                return true;
+            }
+            return false;
         }
     }
     
