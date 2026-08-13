@@ -1,5 +1,7 @@
 // Author: Othmane
 
+package Algorithm;
+
 import Algorithm.Metaheuristics.GeneticAlgorithm;
 import Algorithm.Solution.GiantTour;
 import Algorithm.Data.InputData;

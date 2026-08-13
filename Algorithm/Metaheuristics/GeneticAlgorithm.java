@@ -85,7 +85,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
             return this.UpdatePopulation(graph_crossover);
         }
         else if (parent1 == parent2) {
-            GiantTour random = new GiantTour(this.Data);
+            GiantTour random = new GiantTour(this.Data, false);
             GiantTour graph_crossover = new GiantTour(this.Data, parent1, random);
             return this.UpdatePopulation(graph_crossover); 
         }

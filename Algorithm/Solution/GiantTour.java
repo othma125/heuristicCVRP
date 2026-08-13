@@ -27,13 +27,24 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     public AuxiliaryGraph AuxiliaryGraph = null;
 
     /**
+     * Creates a random giant tour and optionally splits it into routes.
+     *
+     * @param data  the problem instance
+     * @param split if {@code true}, the tour is immediately split into routes
+     */
+    public GiantTour(InputData data, boolean split) {
+        this.setRandomGiantTour(data);
+        if (split)
+            this.Split(data);
+    }
+
+    /**
      * Creates a random giant tour and immediately splits it into routes.
      *
      * @param data the problem instance
      */
     public GiantTour(InputData data) {
-        this.setRandomGiantTour(data);
-        this.Split(data);
+        this(data, true);
     }
 
     /**
