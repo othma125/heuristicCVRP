@@ -211,7 +211,9 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      */
     @Override
     public int compareTo(GiantTour gt) {
-        return Double.compare(this.getFitness() * 100d , gt.getFitness() * 100d);
+        if (this == gt)
+            return 0;
+        return Double.compare(this.getFitness(), gt.getFitness());
     }
 
     /**
