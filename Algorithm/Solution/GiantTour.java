@@ -68,15 +68,18 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     public GiantTour(InputData data, GiantTour ... giant_tours) {
         double bound = Double.NEGATIVE_INFINITY;
         for (GiantTour gt : giant_tours) 
-            if (gt.isFeasible() && gt.getFitness() > bound) 
+            if (gt.getFitness() > bound) 
                 bound = gt.getFitness();
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
             this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
         }
-        else
+        else {
+            // an infeasible child still has to be a usable parent: keep a sequence
+            this.Sequence = giant_tours[0].Sequence.clone();
             graph.close();
+        }
     }
     
     /**
@@ -105,19 +108,19 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                 this.AuxiliaryGraph = graph;
             // // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
             // // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
-            else if (!data.isStopRequested()) {
-                int k = 0;
-                while (graph.getNode(++k).isFeasible()) {}
-                int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
-                System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
-                if (k > feasibility_index) {
-                    for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
-                        int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
-                        new Move(i, j).Swap(this.Sequence);
-                    }
-                    this.Split(data, bound, k);
-                }
-            }
+            // else if (!data.isStopRequested()) {
+            //     int k = 0;
+            //     while (graph.getNode(++k).isFeasible()) {}
+            //     int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
+            //     System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
+            //     if (k > feasibility_index) {
+            //         for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
+            //             int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
+            //             new Move(i, j).Swap(this.Sequence);
+            //         }
+            //         this.Split(data, bound, k);
+            //     }
+            // }
             if (!graph.isFeasible())
                 graph.close();
         }
