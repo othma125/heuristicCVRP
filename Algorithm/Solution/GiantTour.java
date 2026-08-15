@@ -7,7 +7,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Collectors;
@@ -148,19 +156,74 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     }
 
     /**
-     * Initialises the sequence to the identity permutation of all customers and
-     * randomly shuffles it with a series of swaps.
+     * Initialises the sequence from routes packed by randomized Best-Fit
+     * Decreasing: customers are taken in decreasing demand order (equal demands
+     * in random order) and each is placed in one of the two fullest routes that
+     * still fit it, systematically minimising the empty capacity per route. The
+     * routes are then concatenated in random order, each shuffled internally, so
+     * the packing does not leak demand order into the sequence: the split only
+     * needs each route's customers to be contiguous, and keeping the order random
+     * preserves the population diversity the crossover feeds on.
+     *
+     * <p>Only half the tours are packed this way, and none at all when the instance
+     * sets no vehicle limit: the packing buys feasibility on tight instances but
+     * converges to worse optima than a plain shuffle, so the rest stay shuffled and
+     * the population ends up holding both kinds.
      *
      * @param data the problem instance
      */
     private void setRandomGiantTour(InputData data) {
-        this.Sequence = IntStream.range(0, data.getDimension() - 1).toArray();
-        int max = this.Sequence.length / 2;
-        for (int k = 0; k < max; k++) {
-            int i = ThreadLocalRandom.current().nextInt(this.Sequence.length);
-            int j = ThreadLocalRandom.current().nextInt(this.Sequence.length);
-            new Move(i, j).Swap(this.Sequence);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int n = data.getDimension() - 1;
+        int[] customers = IntStream.range(0, n).toArray();
+        for (int i = n - 1; i > 0; i--)
+            new Move(i, rnd.nextInt(i + 1)).Swap(customers);
+        // Without a fleet size constraint there is nothing to pack into: feasibility
+        // is never the bottleneck, and plain random tours converge to better optima.
+        if (data.getMaxVehicleNumber() == Integer.MAX_VALUE || rnd.nextBoolean()) {
+            this.Sequence = customers;
+            return;
         }
+        // stable sort after the shuffle: demand descending, equal demands in random order
+        customers = Arrays.stream(customers)
+                            .boxed()
+                            .sorted(Comparator.comparingInt(data::getDemand).reversed())
+                            .mapToInt(Integer::intValue)
+                            .toArray();
+        int vehicles = Math.min(Math.max(data.getMaxVehicleNumber(), 1), n);
+        Map<Integer, Set<Integer>> routes = new HashMap<>();
+        int[] loads = new int[vehicles];
+        for (int c : customers) {
+            int demand = data.getDemand(c);
+            // best fit: the two fullest routes the customer fits in, picked at random
+            int r1 = -1, r2 = -1;
+            for (int r = 0; r < vehicles; r++)
+                if (loads[r] + demand <= data.getCapacity()) {
+                    if (r1 < 0 || loads[r] > loads[r1]) { r2 = r1; r1 = r; }
+                    else if (r2 < 0 || loads[r] > loads[r2]) r2 = r;
+                }
+            if (r2 >= 0 && rnd.nextBoolean())
+                r1 = r2;
+            if (r1 < 0) {
+                // nothing fits: overload the emptiest route, Split repairs
+                r1 = 0;
+                for (int r = 1; r < vehicles; r++)
+                    if (loads[r] < loads[r1])
+                        r1 = r;
+            }
+            routes.computeIfAbsent(r1, x -> new HashSet<>()).add(c);
+            loads[r1] += demand;
+        }
+        List<Set<Integer>> shuffled_routes = new ArrayList<>(routes.values());
+        Collections.shuffle(shuffled_routes, rnd);
+        this.Sequence = shuffled_routes.stream()
+                                        .flatMap(route -> {
+                                            List<Integer> stops = new ArrayList<>(route);
+                                            Collections.shuffle(stops, rnd);
+                                            return stops.stream();
+                                        })
+                                        .mapToInt(Integer::intValue)
+                                        .toArray();
     }
     
     /**

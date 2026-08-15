@@ -94,6 +94,11 @@ Implemented in `Algorithm/Metaheuristics/GeneticAlgorithm.java`.
 
 ### Population
 - Initialized using randomized giant tours
+- On instances with a vehicle limit (`-kN`), half the tours are instead built by
+  randomized Best-Fit Decreasing bin packing into that many routes, then emitted in
+  random route order with each route shuffled. This makes a feasible split far more
+  likely on tight instances; the other half stay purely random, since packed tours
+  alone converge to worse optima. Instances with no vehicle limit stay purely random.
 - Each individual is decoded using the auxiliary graph
 
 ### Selection
