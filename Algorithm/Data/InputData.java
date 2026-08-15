@@ -5,8 +5,6 @@ package Algorithm.Data;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * CVRPLIB instance parser and distance provider.
@@ -14,8 +12,9 @@ import java.util.concurrent.ConcurrentMap;
  * <p>Parses the {@code DIMENSION}, {@code CAPACITY}, {@code NODE_COORD_SECTION},
  * {@code DEMAND_SECTION} and {@code DEPOT_SECTION} sections of a {@code .vrp}
  * file, and exposes rounded Euclidean distances between stops. Distances are
- * computed lazily and cached in a concurrent map keyed by {@link Edge}, so
- * repeated lookups during the search are cheap and thread-safe.
+ * computed on every call: two array reads and a {@code sqrt} are cheaper than
+ * any memoization of them, and holding no shared state makes the lookup
+ * trivially thread-safe for the parallel split workers.
  *
  * <p>Stop indices exposed through the public accessors are 0-based over the
  * customers; the depot is handled internally as index 0 of the underlying
@@ -24,10 +23,10 @@ import java.util.concurrent.ConcurrentMap;
  * @author Othmane EL YAAKOUBI
  */
 public class InputData {
+    
     public final String FileName;
     private int Dimension;
     public int MaxVehicleNumber;
-    private ConcurrentMap<Edge, Integer> DistanceMap;
     private int Capacity = -1;
     // private int DepotId = -1;
     private int[] Demands;
@@ -142,9 +141,6 @@ public class InputData {
                     // this.DepotId = Integer.parseInt(line);
                 }
         }
-        int capacity = this.Dimension * (this.Dimension - 1);
-        capacity /= 2;
-        this.DistanceMap = new ConcurrentHashMap<>(capacity, 1f);
     }
 
     /**
@@ -165,18 +161,14 @@ public class InputData {
        Distance access
        ====================== */
     /**
-     * Returns the cached distance between two internal indices, computing and
-     * storing it on first access.
+     * Returns the distance between two internal indices.
      *
      * @param stop1 first internal index
      * @param stop2 second internal index
      * @return the distance, or 0 if both indices are equal
      */
     private int getDistance(int stop1, int stop2) {
-        if (stop1 == stop2)
-            return 0;
-        Edge edge = new Edge(stop1, stop2);
-        return this.DistanceMap.computeIfAbsent(edge, e -> euclidean(stop1, stop2));
+        return stop1 == stop2 ? 0 : euclidean(stop1, stop2);
     }
 
     /**

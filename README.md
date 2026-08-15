@@ -33,8 +33,7 @@ HEURISTICCVRP
 ├── Algorithm/            # Solver source and CVRPLIB instances
 │   ├── CVRPLib/          # CVRPLIB instances (.vrp)
 │   ├── Data/             # Algorithm.Data package
-│   │   ├── InputData.java
-│   │   └── Edge.java
+│   │   └── InputData.java
 │   ├── Metaheuristics/   # Algorithm.Metaheuristics package
 │   │   ├── MetaHeuristic.java
 │   │   └── GeneticAlgorithm.java
@@ -156,9 +155,13 @@ Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.jav
 
 Distance computation:
 - Euclidean distance (rounded as per CVRPLIB standard)
-- Storage strategy:
-  - Dense matrix for small instances
-  - Hash-based cache for large instances
+- Computed on every lookup from the coordinate arrays; nothing is stored. Two array reads
+  and a `sqrt` are cheaper than memoizing them, and holding no shared state makes the
+  lookup trivially thread-safe for the parallel split workers.
+- Measured against the `ConcurrentHashMap<Edge, Integer>` cache this replaced (1M random
+  pairs per rep, cache warmed before timing): 22.7 → 5.5 ns/call at n=101, 49.3 → 5.4 at
+  n=1001, 72.5 → 13.5 at n=10001. The cache got *worse* as instances grew, because it
+  stopped fitting in CPU cache; at n=10001 it could reach ~50M entries to memoize a `sqrt`.
 
 ---
 
