@@ -24,6 +24,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     private final Set<Route> Routes;
     private final Set<Integer> Stops;
     private double TotalDistance;
+    private int LeftoverLoad;
 
     /**
      * @param distance the initial total travelled distance
@@ -31,6 +32,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      */
     Solution(double distance, int capacity) {
         this.TotalDistance = distance;
+        this.LeftoverLoad = 0;
         this.Routes = new HashSet<>(capacity, 1f);
         this.Stops = new HashSet<>();
     }
@@ -58,7 +60,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                         this.Routes.remove(r1);
                         this.TotalDistance -= r1.getTraveledDistance();
                         this.Routes.remove(r2);
-                        this.TotalDistance -= r2.getTraveledDistance(); 
+                        this.TotalDistance -= r2.getTraveledDistance();
                         if (lsm.getFirstRoute() != null) {
                             this.Routes.add(lsm.getFirstRoute());
                             this.TotalDistance += lsm.getFirstRoute().getTraveledDistance();
@@ -67,6 +69,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                             this.Routes.add(lsm.getSecondRoute());
                             this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
                         }
+                        this.updateLeftoverLoad();
                         this.InterRoutesLocalSearch(data);
                         return;
                     }
@@ -82,12 +85,14 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     }
 
     /**
-     * Adds a route to the solution and registers all of its stops as served.
+     * Adds a route to the solution, registers all of its stops as served and
+     * keeps the leftover load equal to the largest leftover among the routes.
      *
      * @param new_route the route to add
      */
     void add(Route new_route) {
         this.Routes.add(new_route);
+        this.LeftoverLoad = Math.max(this.LeftoverLoad, new_route.getLeftover());
         for (int stop : new_route.getSequence())
             this.Stops.add(stop);
     }
@@ -111,6 +116,24 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      */
     public double getTotalDistance() {
         return this.TotalDistance;
+    }
+
+    /**
+     * Recomputes the leftover load as the largest unused capacity among the
+     * routes of this solution.
+     */
+    void updateLeftoverLoad() {
+        this.LeftoverLoad = 0;
+        for (Route route : this.Routes)
+            this.LeftoverLoad = Math.max(this.LeftoverLoad, route.getLeftover());
+    }
+
+    /**
+     * @return the largest unused capacity among the routes, i.e. the load the
+     *         emptiest vehicle could still carry
+     */
+    int getLeftoverLoad() {
+        return this.LeftoverLoad;
     }
 
     /**
@@ -170,7 +193,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      */
     @Override
     public int compareTo(Solution sol) {
-        return Double.compare(this.TotalDistance * 100d, sol.TotalDistance * 100d);
+        return Double.compare(this.TotalDistance, sol.TotalDistance);
     }
 
     /**

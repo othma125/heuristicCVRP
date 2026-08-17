@@ -75,7 +75,8 @@ public class ArcSetter extends RecursiveAction {
                     }
                 }
                 int[] sequence_as_array = sequence_as_list.stream().mapToInt(Integer::intValue).toArray();
-                Route new_route = new Route(sequence_as_array, cumulative_demand, cumulative_distance + this.graph.getData().getStopToDepotDistance(sequence_as_list.get(sequence_as_list.size() - 1)));
+                double distance = cumulative_distance + this.graph.getData().getStopToDepotDistance(sequence_as_list.get(sequence_as_list.size() - 1));
+                Route new_route = new Route(this.graph.getData(), sequence_as_array, cumulative_demand, distance);
                 if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= this.graph.getData().getMaxVehicleNumber()
                     && cumulative_demand <= this.graph.getData().getCapacity()) {
                     if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
