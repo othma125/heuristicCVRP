@@ -47,13 +47,13 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             int routes_count = (old_solution != null ? old_solution.getRoutesCount() : 0) + 1;
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
             // if (label < this.getLabel() || routes_count < this.getRoutesCount()) {
-                c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
-                Solution newSolution = new Solution(label, routes_count);
-                if(old_solution != null)
-                    for(Route route : old_solution.getRoutes())
-                        newSolution.add(route);
-                newSolution.add(new_route);
-                this.Solutions.addFirst(newSolution);
+            c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
+            Solution newSolution = new Solution(label, routes_count);
+            if(old_solution != null)
+                for(Route route : old_solution.getRoutes())
+                    newSolution.add(route);
+            newSolution.add(new_route);
+            this.Solutions.addFirst(newSolution);
             // }
         } finally {
             this.Lock.unlock();
@@ -79,11 +79,11 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
             // double leftover = Math.max(old_solution.getLeftoverLoad(), new_route.getLeftover());
             // if (label < this.getLabel() || leftover < this.getLeftoverLoad()) {
-                c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
-                Solution newSolution = new Solution(label, old_solution.getRoutesCount());
-                for (Route route : old_solution.getRoutes())
-                    newSolution.add(route == old_route ? new_route : route);
-                this.Solutions.addFirst(newSolution);
+            c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
+            Solution newSolution = new Solution(label, old_solution.getRoutesCount());
+            for (Route route : old_solution.getRoutes())
+                newSolution.add(route == old_route ? new_route : route);
+            this.Solutions.addFirst(newSolution);
             // }
         } finally {
             this.Lock.unlock();
@@ -117,13 +117,13 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             // double leftover = this.maxLeftover(old_solution, old_route, route1, route2);
             // if (label < this.getLabel() || leftover < this.getLeftoverLoad()) {
-                Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
-                for (Route route : old_solution.getRoutes()) 
-                    if (route != old_route) 
-                        newSolution.add(route);
-                newSolution.add(route1);
-                newSolution.add(route2);
-                this.Solutions.addFirst(newSolution);
+            Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
+            for (Route route : old_solution.getRoutes()) 
+                if (route != old_route) 
+                    newSolution.add(route);
+            newSolution.add(route1);
+            newSolution.add(route2);
+            this.Solutions.addFirst(newSolution);
             // }
         } finally {
             this.Lock.unlock();

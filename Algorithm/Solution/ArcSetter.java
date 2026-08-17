@@ -79,10 +79,10 @@ public class ArcSetter extends RecursiveAction {
                 Route new_route = new Route(this.graph.getData(), sequence_as_array, cumulative_demand, distance);
                 if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= this.graph.getData().getMaxVehicleNumber()
                     && cumulative_demand <= this.graph.getData().getCapacity()) {
-                    if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
+                    // if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
                         new_route.IntraRoutesLocalSearch(this.graph.getData());
                         EndingNode.UpdateLabel(this.Solution, new_route);
-                    }
+                    // }
                 }
                 boolean c = true;
                 if (this.Solution != null) 
