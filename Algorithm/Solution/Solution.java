@@ -6,6 +6,7 @@ import Algorithm.Data.InputData;
 import Algorithm.Solution.LSM.LocalSearchMove;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 public final class Solution implements Comparable<Solution>, AutoCloseable {
 
     private final Set<Route> Routes;
-    private final Set<Integer> Stops;
+    private final BitSet Stops;
     private double TotalDistance;
 
     /**
@@ -32,7 +33,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     Solution(double distance, int capacity) {
         this.TotalDistance = distance;
         this.Routes = new HashSet<>(capacity, 1f);
-        this.Stops = new HashSet<>();
+        this.Stops = new BitSet();
     }
 
     /**
@@ -78,7 +79,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @return {@code true} if the stop is already served by this solution
      */
     boolean contains(int stop) {
-        return this.Stops.contains(stop);
+        return this.Stops.get(stop);
     }
 
     /**
@@ -89,7 +90,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     void add(Route new_route) {
         this.Routes.add(new_route);
         for (int stop : new_route.getSequence())
-            this.Stops.add(stop);
+            this.Stops.set(stop);
     }
 
     /**
@@ -120,7 +121,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @return the concatenated stop sequence
      */
     int[] getNewSequence() {
-        int[] sequence = new int[this.Stops.size()];
+        int[] sequence = new int[this.Stops.cardinality()];
         int index = 0;
         for (Route route : this.Routes) 
             for (int stop : route.getSequence()) 
