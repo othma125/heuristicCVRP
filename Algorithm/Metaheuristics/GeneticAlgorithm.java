@@ -5,7 +5,12 @@ package Algorithm.Metaheuristics;
 import Algorithm.Data.InputData;
 import Algorithm.Solution.GiantTour;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 
 /**
@@ -25,6 +30,15 @@ public class GeneticAlgorithm extends MetaHeuristic {
     private final int PopulationSize;
     private final int TournamentSize = 5;
     private static final int MAX_ALLOWED_FAILURES = 100;
+    // Two threads only: the work submitted here nests parallel work over the split
+    // graph, and running it in a narrow pool leaves the common pool free for the arcs.
+    // Daemon threads so an idle pool never keeps the JVM alive.
+    private static final ExecutorService CrossoverPool = Executors.newFixedThreadPool(2, runnable -> {
+        Thread thread = new Thread(runnable, "crossover-pool");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private final ReentrantLock PopulationLock = new ReentrantLock();
 
     
     /**
@@ -59,22 +73,40 @@ public class GeneticAlgorithm extends MetaHeuristic {
     }
 
     /**
-     * Runs one crossover per individual (a generation).
+     * Runs one crossover per individual (a generation), each on
+     * {@link #CrossoverPool}.
      *
      * @return {@code true} if any crossover improved the incumbent
      */
     private boolean runCrossovers() {
         boolean crossoverResult = false;
         for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++)
-            if (this.Crossover())
+            if (await(CrossoverPool.submit(this::Crossover)))
                 crossoverResult = true;
         return crossoverResult;
     }
 
     /**
+     * Waits for a task submitted to {@link #CrossoverPool} and unwraps its
+     * result, rethrowing any failure as unchecked.
+     *
+     * @param <T>    the task result type
+     * @param future the submitted task
+     * @return the task result
+     */
+    private static <T> T await(Future<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Selects two parents by tournament and recombines them: a graph crossover
      * at the crossover rate, a crossover with a fresh random tour when the same
-     * parent is drawn twice, otherwise a re-split of both parents.
+     * parent is drawn twice, otherwise a re-split of both parents. Runs on
+     * {@link #CrossoverPool}.
      *
      * @return {@code true} if the incumbent was improved
      */
@@ -94,14 +126,19 @@ public class GeneticAlgorithm extends MetaHeuristic {
             // repeat splitting procedure to discover more improvement possibilities
             parent1.Split(this.Data);
             parent2.Split(this.Data);
-            Arrays.sort(this.Population);
-            boolean c1 = this.setBestSolution(parent1);
-            boolean c2 = this.setBestSolution(parent2);
-            if (c1 || c2) {
+            this.PopulationLock.lock();
+            try {
                 Arrays.sort(this.Population);
-                return true;
+                boolean c1 = this.setBestSolution(parent1);
+                boolean c2 = this.setBestSolution(parent2);
+                if (c1 || c2) {
+                    Arrays.sort(this.Population);
+                    return true;
+                }
+                return false;
+            } finally {
+                this.PopulationLock.unlock();
             }
-            return false;
         }
     }
     
@@ -109,7 +146,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
      * Inserts an offspring into the population if it beats the worst
      * individual, replacing a random member of the worse half and re-sorting.
      * When the offspring becomes the new best, it is further recombined with
-     * the best and a random individual.
+     * the best and a random individual. Held under {@link #PopulationLock} so
+     * the replacement and the re-sort cannot interleave with another update.
      *
      * @param newGiantTour the candidate offspring
      * @return {@code true} if the offspring became the new incumbent
@@ -118,19 +156,25 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (newGiantTour == null || !newGiantTour.isFeasible())
             return false;
         boolean c = false;
-        if (newGiantTour.compareTo(this.getLast()) < 0) {
-            int half = this.PopulationSize / 2;
-            int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
-            if (this.setBestSolution(newGiantTour)) {
-                GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
-                this.UpdatePopulation(graph_crossover);
-                c = true;
+        // reentrant: the nested call below re-enters with the lock already held
+        this.PopulationLock.lock();
+        try {
+            if (newGiantTour.compareTo(this.getLast()) < 0) {
+                int half = this.PopulationSize / 2;
+                int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
+                if (this.setBestSolution(newGiantTour)) {
+                    GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
+                    this.UpdatePopulation(graph_crossover);
+                    c = true;
+                }
+                this.Population[randomIndex] = newGiantTour;
+                Arrays.sort(this.Population);
             }
-            this.Population[randomIndex] = newGiantTour;
-            Arrays.sort(this.Population);
+            else
+                newGiantTour.close();
+        } finally {
+            this.PopulationLock.unlock();
         }
-        else
-            newGiantTour.close();
         return c;
     }
     
@@ -139,8 +183,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
      * fitness. The first slot probes feasibility and gives up after 100 failed
      * attempts, which aborts the run; once it succeeds the instance is known to
      * be feasible, so the remaining slots retry until they are and are filled
-     * concurrently. Bails out early if a stop is requested, leaving the sort
-     * out since trailing slots may be unfilled.
+     * concurrently on {@link #CrossoverPool}. Bails out early if a stop is
+     * requested, leaving the sort out since trailing slots may be unfilled.
      */
     private void InitialPopulation() {
         int failure_count = 0;
@@ -152,15 +196,17 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (!this.Population[0].isFeasible())
             return;
         this.setBestSolution(this.Population[0]);
-        IntStream.range(1, this.PopulationSize).parallel()
-                                                .forEach(i -> {
-                                                    do {
-                                                        if (this.Population[i] != null)
-                                                            this.Population[i].close();
-                                                        this.Population[i] = new GiantTour(this.Data);
-                                                    } while (!this.Population[i].isFeasible() && !this.isStopRequested());
-                                                    this.setBestSolution(this.Population[i]);
-                                                });
+        IntStream.range(1, this.PopulationSize)
+                .mapToObj(i -> CrossoverPool.submit(() -> {
+                    do {
+                        if (this.Population[i] != null)
+                            this.Population[i].close();
+                        this.Population[i] = new GiantTour(this.Data);
+                    } while (!this.Population[i].isFeasible() && !this.isStopRequested());
+                    this.setBestSolution(this.Population[i]);
+                }))
+                .toList()
+                .forEach(GeneticAlgorithm::await);
         if (this.isStopRequested())
             return;
         Arrays.sort(this.Population);
