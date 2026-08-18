@@ -114,22 +114,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
             if (graph.isFeasible()) 
                 this.AuxiliaryGraph = graph;
-            // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
-            // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
-            // else if (!data.isStopRequested()) {
-            //     int k = 0;
-            //     while (graph.getNode(++k).isFeasible()) {}
-            //     int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
-            //     System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
-            //     if (k > feasibility_index) {
-            //         for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
-            //             int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
-            //             new Move(i, j).Swap(this.Sequence);
-            //         }
-            //         this.Split(data, bound, k);
-            //     }
-            // }
-            if (!graph.isFeasible())
+            else
                 graph.close();
         }
         else {

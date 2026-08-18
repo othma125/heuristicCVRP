@@ -20,6 +20,8 @@ import java.util.Comparator;
 public class AuxiliaryGraphNode implements AutoCloseable {
 
     private final List<Solution> Solutions = new LinkedList<>();
+    private Solution bestDistance = null;
+    private Solution bestLeftOver = null;
     final ReentrantLock Lock = new ReentrantLock();
     final int NodeIndex;
 
@@ -44,16 +46,20 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         boolean c = false;
         this.Lock.lock();
         try {
-            int routes_count = (old_solution != null ? old_solution.getRoutesCount() : 0) + 1;
+            int leftover_load = old_solution != null ? Math.max(old_solution.getLeftoverLoad(), new_route.getLeftover()) : new_route.getLeftover();
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
-            // if (label < this.getLabel() || routes_count < this.getRoutesCount()) {
-            c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
-            Solution newSolution = new Solution(label, routes_count);
-            if(old_solution != null)
-                for(Route route : old_solution.getRoutes())
-                    newSolution.add(route);
-            newSolution.add(new_route);
-            this.Solutions.addFirst(newSolution);
+            // if (label < this.getLabel() || leftover_load < this.getLeftoverLoad()) {
+                c = this.getLabel() < Double.POSITIVE_INFINITY;
+                Solution newSolution = new Solution(label, leftover_load);
+                if(old_solution != null)
+                    for(Route route : old_solution.getRoutes())
+                        newSolution.add(route);
+                newSolution.add(new_route);
+                this.Solutions.addFirst(newSolution);
+                if (this.bestDistance == null || newSolution.getTotalDistance() < this.bestDistance.getTotalDistance())
+                    this.bestDistance = newSolution;
+                if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
+                    this.bestLeftOver = newSolution;
             // }
         } finally {
             this.Lock.unlock();
@@ -77,13 +83,19 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
-            // double leftover = Math.max(old_solution.getLeftoverLoad(), new_route.getLeftover());
-            // if (label < this.getLabel() || leftover < this.getLeftoverLoad()) {
-            c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
-            Solution newSolution = new Solution(label, old_solution.getRoutesCount());
-            for (Route route : old_solution.getRoutes())
-                newSolution.add(route == old_route ? new_route : route);
-            this.Solutions.addFirst(newSolution);
+            // old_route leaves the solution, so its leftover is excluded; the scan it
+            // costs is short-circuited away whenever the label alone already improves
+            // if (label < this.getLabel()
+            //         || Math.max(old_solution.getLeftoverLoadWithout(old_route), new_route.getLeftover()) < this.getLeftoverLoad()) {
+                c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
+                Solution newSolution = new Solution(label, old_solution.getRoutesCount());
+                for (Route route : old_solution.getRoutes())
+                    newSolution.add(route == old_route ? new_route : route);
+                this.Solutions.addFirst(newSolution);
+                if (this.bestDistance == null || newSolution.getTotalDistance() < this.bestDistance.getTotalDistance())
+                    this.bestDistance = newSolution;
+                if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
+                    this.bestLeftOver = newSolution;
             // }
         } finally {
             this.Lock.unlock();
@@ -115,15 +127,19 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
-            // double leftover = this.maxLeftover(old_solution, old_route, route1, route2);
-            // if (label < this.getLabel() || leftover < this.getLeftoverLoad()) {
-            Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
-            for (Route route : old_solution.getRoutes()) 
-                if (route != old_route) 
-                    newSolution.add(route);
-            newSolution.add(route1);
-            newSolution.add(route2);
-            this.Solutions.addFirst(newSolution);
+            // if (label < this.getLabel()
+            //         || Math.max(old_solution.getLeftoverLoadWithout(old_route), Math.max(route1.getLeftover(), route2.getLeftover())) < this.getLeftoverLoad()) {
+                Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
+                for (Route route : old_solution.getRoutes()) 
+                    if (route != old_route) 
+                        newSolution.add(route);
+                newSolution.add(route1);
+                newSolution.add(route2);
+                this.Solutions.addFirst(newSolution);
+                if (this.bestDistance == null || newSolution.getTotalDistance() < this.bestDistance.getTotalDistance())
+                    this.bestDistance = newSolution;
+                if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
+                    this.bestLeftOver = newSolution;
             // }
         } finally {
             this.Lock.unlock();
@@ -134,11 +150,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @return the current best (lowest-cost) solution reaching this node
      */
     Solution getBestSolution() {
-        Solution best = null;
-        for (Solution solution : this.getSolutions())
-            if (best == null || solution.getTotalDistance() < best.getTotalDistance())
-                best = solution;
-        return best;
+        return this.bestDistance;
     }
 
     /**
@@ -160,7 +172,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         List<Solution> pareto = new LinkedList<>();
         this.Lock.lock();
         try {
-            this.Solutions.sort(Comparator.comparingInt(Solution::getLeftoverLoad));
+            this.Solutions.sort(Comparator.comparingInt(Solution::getLeftoverLoad).thenComparingDouble(Solution::getTotalDistance));
             double best_distance = Double.POSITIVE_INFINITY;
             for (Solution solution : this.Solutions)
                 if (solution.getTotalDistance() < best_distance) {
@@ -207,7 +219,15 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      *         {@link Double#POSITIVE_INFINITY} if infeasible
      */
     double getLabel() {
-        return this.isFeasible() ? this.getBestSolution().getTotalDistance() : Double.POSITIVE_INFINITY;
+        return this.isFeasible() ? this.bestDistance.getTotalDistance() : Double.POSITIVE_INFINITY;
+    }
+
+    /**
+     * @return the leftover load of the best solution, or
+     *         {@link Integer#MAX_VALUE} if infeasible
+     */
+    int getLeftoverLoad() {
+        return this.isFeasible() ? this.bestLeftOver.getLeftoverLoad() : Integer.MAX_VALUE;
     }
 
     /**
