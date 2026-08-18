@@ -152,18 +152,17 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (!this.Population[0].isFeasible())
             return;
         this.setBestSolution(this.Population[0]);
-        IntStream.range(1, this.PopulationSize).parallel().forEach(i -> {
-            do {
-                if (this.Population[i] != null)
-                    this.Population[i].close();
-                this.Population[i] = new GiantTour(this.Data);
-            } while (!this.Population[i].isFeasible() && !this.isStopRequested());
-        });
+        IntStream.range(1, this.PopulationSize).parallel()
+                                                .forEach(i -> {
+                                                    do {
+                                                        if (this.Population[i] != null)
+                                                            this.Population[i].close();
+                                                        this.Population[i] = new GiantTour(this.Data);
+                                                    } while (!this.Population[i].isFeasible() && !this.isStopRequested());
+                                                    this.setBestSolution(this.Population[i]);
+                                                });
         if (this.isStopRequested())
             return;
-        // sequential: setBestSolution logs and mutates the incumbent unsynchronised
-        for (int i = 1; i < this.PopulationSize; i++)
-            this.setBestSolution(this.Population[i]);
         Arrays.sort(this.Population);
     }
     

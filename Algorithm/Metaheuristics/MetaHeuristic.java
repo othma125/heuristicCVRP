@@ -9,6 +9,7 @@ import Algorithm.Data.InputData;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Base class for metaheuristic solvers. Holds the problem instance, tracks the
@@ -24,6 +25,7 @@ public abstract class MetaHeuristic {
     long EndTime;
     long BestSolutionReachingTime;
     private GiantTour BestGiantTour = null;
+    private final ReentrantLock BestLock = new ReentrantLock();
     public final long StagnationMinTime;
 
     /** Incumbent trace: one {time_ms_since_StartTime, cost} pair per improvement. */
@@ -41,19 +43,26 @@ public abstract class MetaHeuristic {
     /**
      * Records {@code new_gt} as the incumbent if it improves on the current
      * best, updating the best-reaching timestamp and logging the improvement.
+     * Guarded by {@link #BestLock} so concurrent callers cannot interleave the
+     * comparison with the update.
      *
      * @param new_gt a candidate giant tour
      * @return {@code true} if the incumbent was replaced
      */
     public boolean setBestSolution(GiantTour new_gt) {
-        if (this.BestGiantTour == null || new_gt.compareTo(this.BestGiantTour) < 0) {
-            this.BestSolutionReachingTime = System.currentTimeMillis();
-            this.BestGiantTour = new_gt;
-            System.out.println(this.BestGiantTour.getFitness() + " after " + (this.BestSolutionReachingTime  - this.StartTime) + " ms");
-            this.Trace.add(new long[]{this.BestSolutionReachingTime - this.StartTime, (long) this.BestGiantTour.getFitness()});
-            return true;
+        this.BestLock.lock();
+        try {
+            if (this.BestGiantTour == null || new_gt.compareTo(this.BestGiantTour) < 0) {
+                this.BestSolutionReachingTime = System.currentTimeMillis();
+                this.BestGiantTour = new_gt;
+                System.out.println(this.BestGiantTour.getFitness() + " after " + (this.BestSolutionReachingTime  - this.StartTime) + " ms");
+                this.Trace.add(new long[]{this.BestSolutionReachingTime - this.StartTime, (long) this.BestGiantTour.getFitness()});
+                return true;
+            }
+            return false;
+        } finally {
+            this.BestLock.unlock();
         }
-        return false;
     }
 
     /**
