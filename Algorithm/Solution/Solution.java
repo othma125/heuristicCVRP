@@ -10,6 +10,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A complete CVRP solution: a set of vehicle {@link Route}s together with the
@@ -25,6 +26,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     private final Set<Route> Routes;
     private final BitSet Stops;
     private double TotalDistance;
+    private int LeftoverLoad;
 
     /**
      * @param distance the initial total travelled distance
@@ -32,26 +34,47 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      */
     Solution(double distance, int capacity) {
         this.TotalDistance = distance;
+        this.LeftoverLoad = 0;
         this.Routes = new HashSet<>(capacity, 1f);
         this.Stops = new BitSet();
     }
 
+    /** Maximum number of inter-route moves applied by one local search call. */
+    private static final int MAX_PASSES = 10;
+
     /**
      * Improves the solution by first optimising each route internally, then
-     * repeatedly applying the best available inter-route move until no further
-     * improving move exists. Routes replaced by a move are swapped in and the
-     * total distance is updated accordingly.
+     * applying the best available inter-route move. Routes replaced by a move
+     * are swapped in and the total distance is updated accordingly.
+     *
+     * <p>Each applied move is followed by another pass, up to
+     * {@value #MAX_PASSES} of them, since a move creates two new routes the
+     * remaining ones may now combine with. The cap keeps the cost bounded: the
+     * search is called on every solution of every Pareto set, so descending all
+     * the way to a local optimum would starve the genetic loop of generations.
      *
      * @param data the problem instance providing distances and capacity
      */
     void InterRoutesLocalSearch(InputData data) {
-        // this.Routes.forEach(r -> {
-        //     double old_distance = r.getTraveledDistance();
-        //     r.IntraRoutesLocalSearch(data);
-        //     this.TotalDistance += r.getTraveledDistance() - old_distance;
-        // });
-        for (Route r1 : this.Routes) 
-            for (Route r2 : this.Routes) 
+        this.InterRoutesLocalSearch(data, MAX_PASSES);
+    }
+
+    /**
+     * @param data the problem instance providing distances and capacity
+     * @param passes the number of moves still allowed
+     */
+    private void InterRoutesLocalSearch(InputData data, int passes) {
+        this.Routes.forEach(r -> {
+            double old_distance = r.getTraveledDistance();
+            r.IntraRoutesLocalSearch(data);
+            this.TotalDistance += r.getTraveledDistance() - old_distance;
+        });
+        // random pair order: the first improving move found is applied, so scanning
+        // the routes in a fixed order would always favour the same pairs
+        List<Route> shuffled_routes = new ArrayList<>(this.Routes);
+        Collections.shuffle(shuffled_routes, ThreadLocalRandom.current());
+        for (Route r1 : shuffled_routes) 
+            for (Route r2 : shuffled_routes) 
                 if (r1 != r2) {
                     LocalSearchMove lsm = r1.getLSM(data, r2);
                     if (lsm != null) {
@@ -59,7 +82,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                         this.Routes.remove(r1);
                         this.TotalDistance -= r1.getTraveledDistance();
                         this.Routes.remove(r2);
-                        this.TotalDistance -= r2.getTraveledDistance(); 
+                        this.TotalDistance -= r2.getTraveledDistance();
                         if (lsm.getFirstRoute() != null) {
                             this.Routes.add(lsm.getFirstRoute());
                             this.TotalDistance += lsm.getFirstRoute().getTraveledDistance();
@@ -68,7 +91,9 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                             this.Routes.add(lsm.getSecondRoute());
                             this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
                         }
-                        this.InterRoutesLocalSearch(data);
+                        this.updateLeftoverLoad();
+                        if (passes > 1)
+                            this.InterRoutesLocalSearch(data, passes - 1);
                         return;
                     }
                 }
@@ -83,12 +108,14 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     }
 
     /**
-     * Adds a route to the solution and registers all of its stops as served.
+     * Adds a route to the solution, registers all of its stops as served and
+     * keeps the leftover load equal to the largest leftover among the routes.
      *
      * @param new_route the route to add
      */
     void add(Route new_route) {
         this.Routes.add(new_route);
+        this.LeftoverLoad = Math.max(this.LeftoverLoad, new_route.getLeftover());
         for (int stop : new_route.getSequence())
             this.Stops.set(stop);
     }
@@ -115,17 +142,62 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     }
 
     /**
+     * Recomputes the leftover load as the largest unused capacity among the
+     * routes of this solution.
+     */
+    void updateLeftoverLoad() {
+        this.LeftoverLoad = 0;
+        for (Route route : this.Routes)
+            this.LeftoverLoad = Math.max(this.LeftoverLoad, route.getLeftover());
+    }
+
+    /**
+     * @return the largest unused capacity among the routes, i.e. the load the
+     *         emptiest vehicle could still carry
+     */
+    int getLeftoverLoad() {
+        return this.LeftoverLoad;
+    }
+
+    /**
+     * Same as {@link #getLeftoverLoad()} but ignoring one route, for labels that
+     * replace a route: the leftover of the route being dropped must not count
+     * towards the leftover of the solution replacing it.
+     *
+     * @param excluded the route being replaced
+     * @return the largest unused capacity among the other routes
+     */
+    int getLeftoverLoadWithout(Route excluded) {
+        int leftover = 0;
+        for (Route route : this.Routes)
+            if (route != excluded)
+                leftover = Math.max(leftover, route.getLeftover());
+        return leftover;
+    }
+
+    /**
      * Flattens the routes back into a single giant-tour sequence by
-     * concatenating their stops.
+     * concatenating their stops, the routes taken in random order.
+     *
+     * <p>Split only needs each route's customers to be contiguous, so the order
+     * the routes are concatenated in costs nothing: re-splitting the sequence
+     * yields the same routes whichever way they are laid out. Randomising it
+     * keeps the re-encoded tours from all sharing the iteration order of
+     * {@link #Routes}, which is what the crossover cuts through. The stops
+     * inside a route keep their order, since that is what the local search just
+     * optimised.
      *
      * @return the concatenated stop sequence
      */
     int[] getNewSequence() {
+        List<Route> shuffled_routes = new ArrayList<>(this.Routes);
+        Collections.shuffle(shuffled_routes, ThreadLocalRandom.current());
         int[] sequence = new int[this.Stops.cardinality()];
         int index = 0;
-        for (Route route : this.Routes) 
+        for (Route route : shuffled_routes) 
             for (int stop : route.getSequence()) 
                 sequence[index++] = stop;
+        assert index == sequence.length : "routes and served stops disagree: " + index + " != " + sequence.length;
         return sequence;
     }
 
@@ -171,7 +243,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      */
     @Override
     public int compareTo(Solution sol) {
-        return Double.compare(this.TotalDistance * 100d, sol.TotalDistance * 100d);
+        return Double.compare(this.TotalDistance, sol.TotalDistance);
     }
 
     /**

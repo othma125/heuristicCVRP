@@ -20,6 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class Route implements Comparable<Route>, AutoCloseable {
 
+    private final InputData Data;
     private int[] Sequence;
     private int SumDemand;
     private double TraveledDistance;
@@ -52,11 +53,13 @@ public final class Route implements Comparable<Route>, AutoCloseable {
     /**
      * Builds a route with precomputed cost, avoiding a distance recomputation.
      *
+     * @param data       the problem instance providing the vehicle capacity
      * @param seq        the ordered stop sequence
      * @param sum_demand the total demand of the sequence
      * @param dist       the total travelled distance of the sequence
      */
-    public Route(int[] seq, int sum_demand, double dist) {
+    public Route(InputData data, int[] seq, int sum_demand, double dist) {
+        this.Data = data;
         this.Sequence = seq;
         this.SumDemand = sum_demand;
         this.TraveledDistance = dist;
@@ -69,6 +72,7 @@ public final class Route implements Comparable<Route>, AutoCloseable {
      * @param seq  the ordered stop sequence
      */
     public Route(InputData data, int[] seq) {
+        this.Data = data;
         this.Sequence = seq;
         this.setCost(data);
     }
@@ -320,6 +324,13 @@ public final class Route implements Comparable<Route>, AutoCloseable {
      */
     public int getSumDemand() {
         return this.SumDemand;
+    }
+
+    /**
+     * @return the capacity this route leaves unused
+     */
+    public int getLeftover() {
+        return this.Data.getCapacity() - this.SumDemand;
     }
 
     /**

@@ -12,7 +12,7 @@
 #   -o, --output   Save output to file
 
 # Default configuration
-REFRESH_INTERVAL=2
+REFRESH_INTERVAL=1
 OUTPUT_FORMAT="terminal"
 QUIET_MODE=false
 FILTER_PATTERN=""
@@ -60,10 +60,14 @@ OPTIONS:
     --mem-medium THRESHOLD  Set medium memory threshold (default: 10)
 
 EXAMPLES:
-    $SCRIPT_NAME                     # Use default 2s refresh
+    $SCRIPT_NAME                     # Use default 1s refresh
     $SCRIPT_NAME 5                   # Refresh every 5 seconds
     $SCRIPT_NAME -q -f "gradle"      # Quiet mode, filter gradle processes
     $SCRIPT_NAME -j -o stats.json    # JSON output to file
+
+KEYS (terminal mode):
+    k       Kill -9 a monitored Java process (prompts for the PID)
+    q       Quit
 
 EOF
 }
@@ -633,6 +637,47 @@ output_data() {
     fi
 }
 
+cleanup_and_exit() {
+    rm -rf "$CPU_STATE_DIR" 2>/dev/null
+    printf '\033[?25h'
+    echo -e "\n${GREEN}Monitoring stopped.${NC}"
+    exit 0
+}
+
+# Prompt for a PID and SIGKILL it. Only PIDs currently listed by the monitor
+# are accepted, so a typo can't kill an unrelated process.
+kill_prompt() {
+    local pid
+    printf '\033[?25h\n%bPID to kill -9 (Enter to cancel): %b' "$YELLOW" "$NC"
+    read -r pid
+    printf '\033[?25l'
+    [ -z "$pid" ] && return 0
+
+    if [[ " $(get_java_pids) " != *" $pid "* ]]; then
+        printf '%bNot a monitored Java PID: %s%b\n' "$RED" "$pid" "$NC"
+    elif kill -9 "$pid" 2>/dev/null; then
+        printf '%bSent SIGKILL to %s%b\n' "$GREEN" "$pid" "$NC"
+    else
+        printf '%bFailed to kill %s (permission denied or already gone)%b\n' "$RED" "$pid" "$NC"
+    fi
+    sleep 1
+}
+
+# Wait out the refresh interval, returning early on a keypress.
+# Falls back to a plain sleep when stdin is not a terminal (piped/cron use).
+wait_for_key() {
+    if [ ! -t 0 ]; then
+        sleep "$REFRESH_INTERVAL"
+        return
+    fi
+    local key
+    read -rsn 1 -t "$REFRESH_INTERVAL" key || return 0
+    case "$key" in
+        q|Q) cleanup_and_exit ;;
+        k|K) kill_prompt ;;
+    esac
+}
+
 # Detect the operating system and reject unsupported platforms early.
 # This script relies on the Linux /proc filesystem and GNU coreutils;
 # it will not function on macOS, Windows (native), or BSD variants.
@@ -688,8 +733,15 @@ main() {
         echo "Note: 'bc' not installed. Some features may be limited." >&2
     fi
     
+    # Terminal mode paints in place, so clear once up front and hide the
+    # cursor (restored by the trap) instead of clearing every tick.
+    if [ "$OUTPUT_FORMAT" != "json" ]; then
+        clear
+        printf '\033[?25l'
+    fi
+
     # Trap to handle exit cleanly
-    trap 'rm -rf "$CPU_STATE_DIR" 2>/dev/null; echo -e "\n${GREEN}Monitoring stopped.${NC}"; exit 0' INT TERM
+    trap cleanup_and_exit INT TERM
     
     # Initialize output file if specified
     if [ -n "$OUTPUT_FILE" ]; then
@@ -727,32 +779,41 @@ main() {
             output+="}"
             output_data "$output"
         else
-            # Terminal output
-            clear
-            echo -e "${GREEN}=== Java Multi-Instance Resource Monitor v2.0 ===${NC}"
-            echo "Refresh: ${REFRESH_INTERVAL}s | $(date '+%Y-%m-%d %H:%M:%S')"
-            echo "System: $(hostname) | Uptime: $(uptime -p 2>/dev/null || uptime | awk -F',' '{print $1}' | sed 's/^.*up //')"
-            if [ -n "$FILTER_PATTERN" ]; then
-                echo "Filter: pattern='$FILTER_PATTERN'"
-            fi
-            if [ -n "$FILTER_USER" ]; then
-                echo "Filter: user='$FILTER_USER'"
-            fi
-            echo ""
-            
-            get_system_stats
-            get_java_stats
-            
-            # Show detailed info only if there's exactly 1 Java process (to avoid clutter)
-            local java_count=$(get_java_pids | wc -w)
-            if [ "$java_count" -eq 1 ]; then
-                get_proc_details
-            fi
-            
-            echo -e "${YELLOW}Press Ctrl+C to stop monitoring${NC}"
+            # Terminal output. Rendered into a buffer, then painted from the
+            # home position with a per-line erase-to-end-of-line and a final
+            # erase-to-end-of-screen. This overwrites the previous frame's
+            # values in place instead of clear-ing (no blank flash, no scroll).
+            local frame
+            frame=$(
+                echo -e "${GREEN}=== Java Multi-Instance Resource Monitor v2.0 ===${NC}"
+                echo "Refresh: ${REFRESH_INTERVAL}s | $(date '+%Y-%m-%d %H:%M:%S')"
+                echo "System: $(hostname) | Uptime: $(uptime -p 2>/dev/null || uptime | awk -F',' '{print $1}' | sed 's/^.*up //')"
+                if [ -n "$FILTER_PATTERN" ]; then
+                    echo "Filter: pattern='$FILTER_PATTERN'"
+                fi
+                if [ -n "$FILTER_USER" ]; then
+                    echo "Filter: user='$FILTER_USER'"
+                fi
+                echo ""
+
+                get_system_stats
+                get_java_stats
+
+                # Show detailed info only if there's exactly 1 Java process (to avoid clutter)
+                if [ "$(get_java_pids | wc -w)" -eq 1 ]; then
+                    get_proc_details
+                fi
+
+                echo -e "${YELLOW}[k] kill -9 a process  [q] quit${NC}"
+            )
+            printf '\033[H%s\n\033[J' "$(printf '%s\n' "$frame" | sed $'s/$/\033[K/')"
         fi
         
-        sleep $REFRESH_INTERVAL
+        if [ "$OUTPUT_FORMAT" = "json" ]; then
+            sleep $REFRESH_INTERVAL
+        else
+            wait_for_key
+        fi
     done
 }
 

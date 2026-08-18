@@ -82,6 +82,15 @@ HEURISTICCVRP
 - Edge cost = routing cost of the corresponding segment.
 - **Shortest path** from start to end gives the optimal split.
 
+Each node keeps **several labels** rather than one, and expands only the **Pareto set**
+over (largest route leftover, total distance): labels are sorted by leftover first, then
+by distance, and a label is expanded only if it is the cheapest seen at its leftover level.
+Carrying labels that leave a lot of spare capacity — even when they cost more — is what
+lets the split place the remaining customers on tight, vehicle-limited instances, so a
+first feasible solution is reached markedly faster than with a single shortest-path label.
+Labels are relaxed unconditionally; the pruning tests are kept in the source, commented
+out, since discarding labels early was what made feasibility hard to reach.
+
 This guarantees:
 - Capacity feasibility
 - Optimal route partitioning for a given giant tour
@@ -131,7 +140,10 @@ Moves implemented:
 - Left Shift
 - Right Shift
 
-Local search is executed **inside the auxiliary graph context**, allowing high-quality improvements without breaking feasibility. The intra-route local search is applied **lazily** — skipped whenever it cannot change the label chosen for a split node — to avoid redundant work during decoding.
+Local search is executed **inside the auxiliary graph context**, allowing high-quality
+improvements without breaking feasibility. Every candidate route is optimised as it is
+relaxed into a node, and the inter-route search chains up to ten moves per call, scanning
+route pairs in random order so the same pairs are not always improved first.
 
 ---
 
@@ -142,7 +154,9 @@ Local search is executed **inside the auxiliary graph context**, allowing high-q
 - Parallel:
   - Fitness evaluations
   - Auxiliary graph construction
-  - Local search moves
+  - Local search moves, except the final pass over a node's Pareto set: its labels
+    share their `Route` objects and the moves rewrite sequences in place, so that pass
+    is sequential
 
 Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.java`.
 

@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.Phaser;
@@ -34,7 +36,11 @@ public class AuxiliaryGraph implements AutoCloseable {
     private AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
-    private static final ForkJoinPool Pool = ForkJoinPool.commonPool();
+    private static final ExecutorService CleanupPool = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "auxiliary-graph-cleanup");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final Phaser phaser = new Phaser(1);
 
     /**
@@ -60,12 +66,15 @@ public class AuxiliaryGraph implements AutoCloseable {
             ArcSetter setter = new ArcSetter(this, this.Nodes[0], null, gt);
             this.ArcsSetters.add(setter);
             this.phaser.register();
-            AuxiliaryGraph.Pool.execute(setter);
+            ForkJoinPool.commonPool().execute(setter);
         }
         this.phaser.arriveAndAwaitAdvance();
         if (this.isFeasible())
-            this.getLastNode().getSolutions()
-                                .parallelStream()
+            // sequential on purpose: labels share their Route objects, and the local search
+            // shifts sequences in place, so two threads improving two labels of the Pareto
+            // set would corrupt the route they have in common
+            this.getLastNode().getParetoSet()
+                                .stream()
                                 .forEach(s -> s.InterRoutesLocalSearch(data));
     }
 
@@ -90,13 +99,13 @@ public class AuxiliaryGraph implements AutoCloseable {
                     break;
                 }
             if (allMatch) 
-                for (Solution solution : node.getSolutions()) 
-                    if (solution.getTotalDistance() < this.Bound)
+                for (Solution solution : node.getParetoSet())
+                    if (solution.getTotalDistance() < this.Bound) 
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
                             this.ArcsSetters.add(setter);
                             this.phaser.register();
-                            AuxiliaryGraph.Pool.execute(setter);
+                            ForkJoinPool.commonPool().execute(setter);
                         }
         } finally {
             node.Lock.unlock();
@@ -142,6 +151,13 @@ public class AuxiliaryGraph implements AutoCloseable {
     }
 
     /**
+     * @return the number of candidate solutions at the sink node
+     */
+    int getSolutionsCount() {
+        return this.getLastNode().getSolutions().size();
+    }
+
+    /**
      * @return the CVRPLIB route listing of the optimal split
      */
     String export() {
@@ -171,11 +187,12 @@ public class AuxiliaryGraph implements AutoCloseable {
      */
     @Override
     public void close() {
-        new Thread(() -> {
-            for (AuxiliaryGraphNode node : this.Nodes)
+        AuxiliaryGraphNode[] nodes = this.Nodes;
+        this.Nodes = null;
+        CleanupPool.execute(() -> {
+            for (AuxiliaryGraphNode node : nodes)
                 node.close();
-            this.Nodes = null;
-        }).start();
+        });
     }
 
     // Getter methods for ArcSetter access

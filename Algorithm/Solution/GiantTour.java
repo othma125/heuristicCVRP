@@ -110,31 +110,16 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * @param feasibility_index the furthest feasible node reached so far, used to detect and stop non-progressing retries
      */
     private void Split(InputData data, double bound, int feasibility_index) {
-        if (this.AuxiliaryGraph == null) {
+        if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getSolutionsCount() == 1) {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
             if (graph.isFeasible()) 
                 this.AuxiliaryGraph = graph;
-            // A stopped run leaves the tour infeasible rather than reshuffling and re-splitting:
-            // the graph above was abandoned half-built, so its partial prefix is not worth keeping.
-            else if (!data.isStopRequested()) {
-                int k = 0;
-                while (graph.getNode(++k).isFeasible()) {}
-                int[] partial_sequence = graph.getNode(k - 1).getNewSequence(data);
-                System.arraycopy(partial_sequence, 0, this.Sequence, 0, partial_sequence.length);
-                if (k > feasibility_index) {
-                    for (int i = partial_sequence.length; i < this.Sequence.length; i++) {
-                        int j = ThreadLocalRandom.current().nextInt(partial_sequence.length);
-                        new Move(i, j).Swap(this.Sequence);
-                    }
-                    this.Split(data, bound, k);
-                }
-            }
-            if (!graph.isFeasible())
+            else
                 graph.close();
         }
         else {
             var feasibleTours = this.AuxiliaryGraph.getLastNode()
-                                                    .getSolutions()
+                                                    .getParetoSet()
                                                     .parallelStream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
                                                     .peek(gt -> gt.Split(data, bound, 0))
@@ -180,7 +165,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
             new Move(i, rnd.nextInt(i + 1)).Swap(customers);
         // Without a fleet size constraint there is nothing to pack into: feasibility
         // is never the bottleneck, and plain random tours converge to better optima.
-        if (data.getMaxVehicleNumber() == Integer.MAX_VALUE || rnd.nextBoolean()) {
+        if (data.getMaxVehicleNumber() == Integer.MAX_VALUE) {
             this.Sequence = customers;
             return;
         }
@@ -199,8 +184,12 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
             int r1 = -1, r2 = -1;
             for (int r = 0; r < vehicles; r++)
                 if (loads[r] + demand <= data.getCapacity()) {
-                    if (r1 < 0 || loads[r] > loads[r1]) { r2 = r1; r1 = r; }
-                    else if (r2 < 0 || loads[r] > loads[r2]) r2 = r;
+                    if (r1 < 0 || loads[r] > loads[r1]) {
+                        r2 = r1;
+                        r1 = r;
+                    }
+                    else if (r2 < 0 || loads[r] > loads[r2]) 
+                        r2 = r;
                 }
             if (r2 >= 0 && rnd.nextBoolean())
                 r1 = r2;
