@@ -97,7 +97,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * @param data the problem instance
      */
     public void Split(InputData data) {
-        this.Split(data, this.getFitness(), 0);
+        this.Split(data, this.getFitness());
     }
 
     /**
@@ -109,8 +109,8 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * @param bound             cost upper bound used to prune the graph
      * @param feasibility_index the furthest feasible node reached so far, used to detect and stop non-progressing retries
      */
-    private void Split(InputData data, double bound, int feasibility_index) {
-        if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getSolutionsCount() == 1) {
+    private void Split(InputData data, double bound) {
+        if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getParetoSetCount() == 1) {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
             if (graph.isFeasible()) 
                 this.AuxiliaryGraph = graph;
@@ -122,7 +122,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                                                     .getParetoSet()
                                                     .parallelStream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
-                                                    .peek(gt -> gt.Split(data, bound, 0))
+                                                    .peek(gt -> gt.Split(data, bound))
                                                     .filter(GiantTour::isFeasible)
                                                     .collect(Collectors.toList());
             GiantTour best = feasibleTours.stream()

@@ -70,9 +70,6 @@ public class AuxiliaryGraph implements AutoCloseable {
         }
         this.phaser.arriveAndAwaitAdvance();
         if (this.isFeasible())
-            // sequential on purpose: labels share their Route objects, and the local search
-            // shifts sequences in place, so two threads improving two labels of the Pareto
-            // set would corrupt the route they have in common
             this.getLastNode().getParetoSet()
                                 .stream()
                                 .forEach(s -> s.InterRoutesLocalSearch(data));
@@ -155,6 +152,13 @@ public class AuxiliaryGraph implements AutoCloseable {
      */
     int getSolutionsCount() {
         return this.getLastNode().getSolutions().size();
+    }
+
+    /**
+     * @return the number of Pareto-optimal solutions at the sink node
+     */
+    int getParetoSetCount() {
+        return this.getLastNode().getParetoSet().size();
     }
 
     /**
