@@ -345,27 +345,11 @@ get_system_stats() {
         echo "  \"cpu_usage_pct\": $cpu_usage"
         echo '}}'
     else
-        echo -e "${CYAN}=== SYSTEM OVERVIEW ===${NC}"
-        echo "Total CPU Cores: $TOTAL_CORES"
-        echo "Total Memory: $TOTAL_MEM_GB GB ($TOTAL_MEM_MB MB)"
-        
-        # Load average
-        local load_avg=$(uptime | awk -F'load average:' '{print $2}')
-        echo "Load Average (1/5/15 min):$load_avg"
-        
-        # Memory usage
+        local load_avg=$(uptime | awk -F'load average:' '{print $2}' | tr -d ' ')
         local mem_available=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}')
         local mem_used_kb=$((TOTAL_MEM_KB - mem_available))
-        local mem_used_mb=$((mem_used_kb / 1024))
         local mem_used_pct=$(awk "BEGIN {printf \"%.1f\", ($mem_used_kb/$TOTAL_MEM_KB)*100}")
-        local mem_used_bytes=$((mem_used_kb * 1024))
-        
-        echo "Memory Used: $(format_bytes $mem_used_bytes) / $TOTAL_MEM_GB GB (${mem_used_pct}%)"
-        
-        # CPU usage (using efficient method)
-        local cpu_usage=$(get_cpu_usage)
-        echo "System CPU Usage: ${cpu_usage}%"
-        echo ""
+        echo -e "${CYAN}System:${NC} CPU $(get_cpu_usage)% | Mem $(format_bytes $((mem_used_kb * 1024)))/${TOTAL_MEM_GB} GB (${mem_used_pct}%) | Load $load_avg"
     fi
 }
 
@@ -397,12 +381,25 @@ get_java_stats() {
         echo ""
         
         # Header
-        printf "%-8s %-10s %8s %12s %12s %10s %8s %-20s\n" \
-            "PID" "USER" "CPU%" "CPU Cores" "MEM%" "RSS" "VSZ" "COMMAND"
-        printf "%-8s %-10s %8s %12s %12s %10s %8s %-20s\n" \
-            "--------" "----------" "--------" "------------" "------------" "----------" "--------" "--------------------"
+        printf "%-8s %-10s %8s %12s %12s %10s %8s %-14s %-20s\n" \
+            "PID" "USER" "CPU%" "CPU Cores" "MEM%" "RSS" "VSZ" "PORTS" "COMMAND"
+        printf "%-8s %-10s %8s %12s %12s %10s %8s %-14s %-20s\n" \
+            "--------" "----------" "--------" "------------" "------------" "----------" "--------" "--------------" "--------------------"
     fi
     
+    # Listening TCP ports per PID, from a single ss call. ss only annotates
+    # sockets the caller owns unless run as root, so ports show as "-" for
+    # other users' processes.
+    local ports_map
+    ports_map=$(ss -tlnpH 2>/dev/null | awk '{
+        n = split($4, a, ":"); port = a[n]
+        s = $0
+        while (match(s, /pid=[0-9]+/)) {
+            print substr(s, RSTART + 4, RLENGTH - 4), port
+            s = substr(s, RSTART + RLENGTH)
+        }
+    }' | sort -u -k1,1n -k2,2n)
+
     # Process tracking variables
     local total_cpu_raw=0.0
     local total_mem_pct=0.0
@@ -453,6 +450,9 @@ get_java_stats() {
             local vsz_fmt=$(format_bytes $vsz_bytes)
             
             # Color coding for high resource usage (terminal only)
+            local ports=$(awk -v p="$pid" '$1 == p {printf "%s%s", sep, $2; sep=","}' <<< "$ports_map")
+            [ -z "$ports" ] && ports="-"
+
             local cpu_color=$GREEN mem_color=$GREEN
             if [ "$OUTPUT_FORMAT" != "json" ]; then
                 if compare_float "$cpu_pct_normalized" ">" "$CPU_HIGH_THRESHOLD"; then
@@ -484,8 +484,8 @@ get_java_stats() {
                 echo "      \"command\": \"$full_cmd\""
                 echo -n '    }'
             else
-                printf "%-8s %-10s ${cpu_color}%8.1f${NC} %12s ${mem_color}%12.1f${NC} %10s %8s %-20s\n" \
-                    "$pid" "$user" "$cpu_pct_normalized" "${cpu_cores}/${TOTAL_CORES}" "$mem_pct" "$rss_fmt" "$vsz_fmt" "$full_cmd"
+                printf "%-8s %-10s ${cpu_color}%8.1f${NC} %12s ${mem_color}%12.1f${NC} %10s %8s %-14.14s %-20s\n" \
+                    "$pid" "$user" "$cpu_pct_normalized" "${cpu_cores}/${TOTAL_CORES}" "$mem_pct" "$rss_fmt" "$vsz_fmt" "$ports" "$full_cmd"
             fi
             
             # Accumulate totals
@@ -779,34 +779,20 @@ main() {
             output+="}"
             output_data "$output"
         else
-            # Terminal output. Rendered into a buffer, then painted from the
-            # home position with a per-line erase-to-end-of-line and a final
-            # erase-to-end-of-screen. This overwrites the previous frame's
-            # values in place instead of clear-ing (no blank flash, no scroll).
+            # Terminal output: one compact header line plus the Java process
+            # table. Rendered into a buffer, then painted from the home position
+            # with a per-line erase-to-end-of-line and a final erase-to-end-of-
+            # screen, so values update in place (no blank flash, no scroll).
             local frame
             frame=$(
-                echo -e "${GREEN}=== Java Multi-Instance Resource Monitor v2.0 ===${NC}"
-                echo "Refresh: ${REFRESH_INTERVAL}s | $(date '+%Y-%m-%d %H:%M:%S')"
-                echo "System: $(hostname) | Uptime: $(uptime -p 2>/dev/null || uptime | awk -F',' '{print $1}' | sed 's/^.*up //')"
-                if [ -n "$FILTER_PATTERN" ]; then
-                    echo "Filter: pattern='$FILTER_PATTERN'"
-                fi
-                if [ -n "$FILTER_USER" ]; then
-                    echo "Filter: user='$FILTER_USER'"
-                fi
-                echo ""
-
+                echo -e "${GREEN}Java Monitor${NC} | $(date '+%H:%M:%S') | every ${REFRESH_INTERVAL}s | $(hostname) | ${TOTAL_CORES} cores, ${TOTAL_MEM_GB} GB${FILTER_PATTERN:+ | pattern='$FILTER_PATTERN'}${FILTER_USER:+ | user='$FILTER_USER'}"
                 get_system_stats
                 get_java_stats
-
-                # Show detailed info only if there's exactly 1 Java process (to avoid clutter)
-                if [ "$(get_java_pids | wc -w)" -eq 1 ]; then
-                    get_proc_details
-                fi
-
                 echo -e "${YELLOW}[k] kill -9 a process  [q] quit${NC}"
             )
-            printf '\033[H%s\n\033[J' "$(printf '%s\n' "$frame" | sed $'s/$/\033[K/')"
+            # Truncate to the window so a long table can never push the frame
+            # off the top and start scrolling.
+            printf '\033[H%s\n\033[J' "$(printf '%s\n' "$frame" | head -n $(( $(tput lines 2>/dev/null || echo 24) - 1 )) | sed $'s/$/\033[K/')"
         fi
         
         if [ "$OUTPUT_FORMAT" = "json" ]; then
