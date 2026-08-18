@@ -154,7 +154,9 @@ route pairs in random order so the same pairs are not always improved first.
 - Parallel:
   - Fitness evaluations
   - Auxiliary graph construction
-  - Local search moves
+  - Local search moves, except the final pass over a node's Pareto set: its labels
+    share their `Route` objects and the moves rewrite sequences in place, so that pass
+    is sequential
 
 Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.java`.
 

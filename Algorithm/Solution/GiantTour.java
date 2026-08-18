@@ -110,7 +110,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * @param feasibility_index the furthest feasible node reached so far, used to detect and stop non-progressing retries
      */
     private void Split(InputData data, double bound, int feasibility_index) {
-        if (this.AuxiliaryGraph == null) {
+        if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getSolutionsCount() == 1) {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
             if (graph.isFeasible()) 
                 this.AuxiliaryGraph = graph;

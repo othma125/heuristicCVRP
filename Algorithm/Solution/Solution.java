@@ -197,6 +197,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
         for (Route route : shuffled_routes) 
             for (int stop : route.getSequence()) 
                 sequence[index++] = stop;
+        assert index == sequence.length : "routes and served stops disagree: " + index + " != " + sequence.length;
         return sequence;
     }
 

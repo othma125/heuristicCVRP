@@ -48,8 +48,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         try {
             int leftover_load = old_solution != null ? Math.max(old_solution.getLeftoverLoad(), new_route.getLeftover()) : new_route.getLeftover();
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
-            // if (label < this.getLabel() || leftover_load < this.getLeftoverLoad()) {
-                c = this.getLabel() < Double.POSITIVE_INFINITY;
+            if (label < this.getLabel() || leftover_load < this.getLeftoverLoad()) {
+                c = this.isFeasible();
                 Solution newSolution = new Solution(label, leftover_load);
                 if(old_solution != null)
                     for(Route route : old_solution.getRoutes())
@@ -60,7 +60,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
                     this.bestDistance = newSolution;
                 if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
                     this.bestLeftOver = newSolution;
-            // }
+            }
         } finally {
             this.Lock.unlock();
         }
@@ -85,9 +85,9 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
             // old_route leaves the solution, so its leftover is excluded; the scan it
             // costs is short-circuited away whenever the label alone already improves
-            // if (label < this.getLabel()
-            //         || Math.max(old_solution.getLeftoverLoadWithout(old_route), new_route.getLeftover()) < this.getLeftoverLoad()) {
-                c = label < this.getLabel() && this.getLabel() < Double.POSITIVE_INFINITY;
+            if (label < this.getLabel()
+                    || Math.max(old_solution.getLeftoverLoadWithout(old_route), new_route.getLeftover()) < this.getLeftoverLoad()) {
+                c = this.isFeasible();
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount());
                 for (Route route : old_solution.getRoutes())
                     newSolution.add(route == old_route ? new_route : route);
@@ -96,7 +96,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
                     this.bestDistance = newSolution;
                 if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
                     this.bestLeftOver = newSolution;
-            // }
+            }
         } finally {
             this.Lock.unlock();
         }
@@ -127,8 +127,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
-            // if (label < this.getLabel()
-            //         || Math.max(old_solution.getLeftoverLoadWithout(old_route), Math.max(route1.getLeftover(), route2.getLeftover())) < this.getLeftoverLoad()) {
+            if (label < this.getLabel()
+                    || Math.max(old_solution.getLeftoverLoadWithout(old_route), Math.max(route1.getLeftover(), route2.getLeftover())) < this.getLeftoverLoad()) {
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
                 for (Route route : old_solution.getRoutes()) 
                     if (route != old_route) 
@@ -140,7 +140,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
                     this.bestDistance = newSolution;
                 if (this.bestLeftOver == null || newSolution.getLeftoverLoad() < this.bestLeftOver.getLeftoverLoad())
                     this.bestLeftOver = newSolution;
-            // }
+            }
         } finally {
             this.Lock.unlock();
         }
@@ -150,7 +150,11 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @return the current best (lowest-cost) solution reaching this node
      */
     Solution getBestSolution() {
-        return this.bestDistance;
+        Solution best = this.bestDistance;
+        for (Solution solution : this.Solutions) 
+            if (solution.getTotalDistance() < best.getTotalDistance()) 
+                best = solution;
+        return best;
     }
 
     /**
@@ -219,7 +223,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      *         {@link Double#POSITIVE_INFINITY} if infeasible
      */
     double getLabel() {
-        return this.isFeasible() ? this.bestDistance.getTotalDistance() : Double.POSITIVE_INFINITY;
+        return this.isFeasible() ? this.getBestSolution().getTotalDistance() : Double.POSITIVE_INFINITY;
     }
 
     /**
