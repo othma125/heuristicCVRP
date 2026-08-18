@@ -6,6 +6,7 @@ import Algorithm.Data.InputData;
 import Algorithm.Solution.GiantTour;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 /**
  * Memetic solver: a genetic algorithm over giant tours whose graph-based
@@ -134,27 +135,36 @@ public class GeneticAlgorithm extends MetaHeuristic {
     }
     
     /**
-     * Fills the population with feasible random giant tours, giving up on the
-     * first slot after 100 failed attempts (which aborts the run), and sorts
-     * the population by fitness. Bails out early if a stop is requested,
-     * leaving the sort out since trailing slots may be unfilled.
+     * Fills the population with feasible random giant tours and sorts it by
+     * fitness. The first slot probes feasibility and gives up after 100 failed
+     * attempts, which aborts the run; once it succeeds the instance is known to
+     * be feasible, so the remaining slots retry until they are and are filled
+     * concurrently. Bails out early if a stop is requested, leaving the sort
+     * out since trailing slots may be unfilled.
      */
     private void InitialPopulation() {
-        for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++) {
-            int failure_count = 0;
+        int failure_count = 0;
+        do {
+            if (this.Population[0] != null)
+                this.Population[0].close();
+            this.Population[0] = new GiantTour(this.Data);
+        } while (!this.Population[0].isFeasible() && ++failure_count < MAX_ALLOWED_FAILURES && !this.isStopRequested());
+        if (!this.Population[0].isFeasible())
+            return;
+        this.setBestSolution(this.Population[0]);
+        IntStream.range(1, this.PopulationSize).parallel().forEach(i -> {
             do {
                 if (this.Population[i] != null)
                     this.Population[i].close();
                 this.Population[i] = new GiantTour(this.Data);
-                failure_count++;
-                // System.out.println("Failure count: " + failure_count);
-            } while (!this.Population[i].isFeasible() && (i > 0 || failure_count < MAX_ALLOWED_FAILURES) && !this.isStopRequested());
-            if (i == 0 && !this.Population[0].isFeasible())
-                return;
+            } while (!this.Population[i].isFeasible() && !this.isStopRequested());
+        });
+        if (this.isStopRequested())
+            return;
+        // sequential: setBestSolution logs and mutates the incumbent unsynchronised
+        for (int i = 1; i < this.PopulationSize; i++)
             this.setBestSolution(this.Population[i]);
-        }
-        if (!this.isStopRequested())
-            Arrays.sort(this.Population);
+        Arrays.sort(this.Population);
     }
     
     /**

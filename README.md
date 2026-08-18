@@ -109,6 +109,9 @@ Implemented in `Algorithm/Metaheuristics/GeneticAlgorithm.java`.
   likely on tight instances; the other half stay purely random, since packed tours
   alone converge to worse optima. Instances with no vehicle limit stay purely random.
 - Each individual is decoded using the auxiliary graph
+- The first individual probes feasibility (up to 100 attempts, otherwise the run
+  aborts); once it succeeds the remaining individuals are generated concurrently,
+  each retrying until its split is feasible
 
 ### Selection
 - Tournament selection
