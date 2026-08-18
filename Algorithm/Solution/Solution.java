@@ -47,11 +47,11 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @param data the problem instance providing distances and capacity
      */
     void InterRoutesLocalSearch(InputData data) {
-        // this.Routes.forEach(r -> {
-        //     double old_distance = r.getTraveledDistance();
-        //     r.IntraRoutesLocalSearch(data);
-        //     this.TotalDistance += r.getTraveledDistance() - old_distance;
-        // });
+        this.Routes.forEach(r -> {
+            double old_distance = r.getTraveledDistance();
+            r.IntraRoutesLocalSearch(data);
+            this.TotalDistance += r.getTraveledDistance() - old_distance;
+        });
         for (Route r1 : this.Routes) 
             for (Route r2 : this.Routes) 
                 if (r1 != r2) {
@@ -71,7 +71,7 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                             this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
                         }
                         this.updateLeftoverLoad();
-                        this.InterRoutesLocalSearch(data);
+                        // this.InterRoutesLocalSearch(data);
                         return;
                     }
                 }

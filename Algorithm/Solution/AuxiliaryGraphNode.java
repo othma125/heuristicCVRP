@@ -160,13 +160,12 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         List<Solution> pareto = new LinkedList<>();
         this.Lock.lock();
         try {
-            List<Solution> sorted = new ArrayList<>(this.Solutions);
-            sorted.sort(Comparator.comparingDouble(Solution::getTotalDistance));
-            int best_leftover = Integer.MAX_VALUE;
-            for (Solution solution : sorted)
-                if (solution.getLeftoverLoad() < best_leftover) {
-                    pareto.add(solution);
-                    best_leftover = solution.getLeftoverLoad();
+            this.Solutions.sort(Comparator.comparingInt(Solution::getLeftoverLoad));
+            double best_distance = Double.POSITIVE_INFINITY;
+            for (Solution solution : this.Solutions)
+                if (solution.getTotalDistance() < best_distance) {
+                    pareto.addFirst(solution);
+                    best_distance = solution.getTotalDistance();
                 }
                 else
                     break;
