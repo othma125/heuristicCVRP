@@ -95,9 +95,10 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * fitness as the pruning bound.
      *
      * @param data the problem instance
+     * @return {@code true} if the re-split improved on the current fitness
      */
-    public void Split(InputData data) {
-        this.Split(data, this.getFitness());
+    public boolean Split(InputData data) {
+        return this.Split(data, this.getFitness());
     }
 
     /**
@@ -108,12 +109,17 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      *
      * @param data  the problem instance
      * @param bound cost upper bound used to prune the graph
+     * @return {@code true} if a split beating {@code bound} was accepted, i.e.
+     *         the tour now holds a strictly better graph than it did
      */
-    private void Split(InputData data, double bound) {
+    private boolean Split(InputData data, double bound) {
+        boolean c = false;
         if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getParetoSetCount() == 1) {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
-            if (graph.isFeasible()) 
+            if (graph.getLabel() < bound) {
+                c = true;
                 this.AuxiliaryGraph = graph;
+            }
             else
                 graph.close();
         }
@@ -122,8 +128,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                                                     .getParetoSet()
                                                     .stream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
-                                                    .peek(gt -> gt.Split(data, bound))
-                                                    .filter(GiantTour::isFeasible)
+                                                    .filter(gt -> gt.Split(data, bound) && gt.getFitness() < bound)
                                                     .collect(Collectors.toList());
             GiantTour best = feasibleTours.stream()
                                           .min(Comparator.comparingDouble(GiantTour::getFitness))
@@ -132,12 +137,14 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                 if (gt != best)
                     gt.close();
             if (best != null) {
+                c = true;
                 this.Sequence = best.Sequence;
                 this.AuxiliaryGraph.close();
                 this.AuxiliaryGraph = best.AuxiliaryGraph;
             }
             feasibleTours.clear();
         }
+        return c;
     }
 
     /**

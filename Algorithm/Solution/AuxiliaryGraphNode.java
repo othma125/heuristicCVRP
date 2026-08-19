@@ -40,6 +40,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @param old_solution the partial solution reaching the predecessor node,
      *                     or {@code null} for the source
      * @param new_route    the route appended to reach this node
+     * @return {@code true} if the node was already feasible when an improving
+     *         label was accepted
      */
     boolean UpdateLabel(Solution old_solution, Route new_route) {
         if (new_route == null)
@@ -51,7 +53,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
             if (label < this.getLabel() || leftover_load < this.getLeftoverLoad()) {
                 c = this.isFeasible();
-                Solution newSolution = new Solution(label, leftover_load);
+                int routes_count = old_solution != null ? old_solution.getRoutesCount() + 1 : 1;
+                Solution newSolution = new Solution(label, routes_count);
                 if(old_solution != null)
                     for(Route route : old_solution.getRoutes())
                         newSolution.add(route);
@@ -76,6 +79,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @param old_solution the partial solution to derive from
      * @param old_route    the route being replaced
      * @param new_route    the replacement route
+     * @return {@code true} if the node was already feasible when an improving
+     *         label was accepted
      */
     boolean UpdateLabel(Solution old_solution, Route old_route, Route new_route) {
         if (new_route == null)
@@ -113,21 +118,21 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      * @param old_route    the route being replaced
      * @param route1       the first replacement route (may be {@code null})
      * @param route2       the second replacement route (may be {@code null})
+     * @return {@code true} if the node was already feasible when an improving
+     *         label was accepted
      */
-    void UpdateLabel(InputData data, Solution old_solution, Route old_route, Route route1, Route route2) {
-        if (route1 == null) {
-            this.UpdateLabel(old_solution, old_route, route2);
-            return;
-        }
-        else if (route2 == null) {
-            this.UpdateLabel(old_solution, old_route, route1);
-            return;
-        }
+    boolean UpdateLabel(InputData data, Solution old_solution, Route old_route, Route route1, Route route2) {
+        if (route1 == null)
+            return this.UpdateLabel(old_solution, old_route, route2);
+        else if (route2 == null)
+            return this.UpdateLabel(old_solution, old_route, route1);
+        boolean c = false;
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
             if (label < this.getLabel()
                     || Math.max(old_solution.getLeftoverLoadWithout(old_route), Math.max(route1.getLeftover(), route2.getLeftover())) < this.getLeftoverLoad()) {
+                c = this.isFeasible();
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);
                 for (Route route : old_solution.getRoutes()) 
                     if (route != old_route) 
@@ -143,6 +148,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         } finally {
             this.Lock.unlock();
         }
+        return c;
     }
 
     /**

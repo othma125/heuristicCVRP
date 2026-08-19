@@ -3,10 +3,13 @@
 package Algorithm.Solution;
 
 import Algorithm.Solution.LSM.LocalSearchMove;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A parallel task that, starting from one node and one partial solution,
@@ -41,8 +44,8 @@ public class ArcSetter extends RecursiveAction {
      * Walks forward from the starting node, accumulating stops into a
      * candidate route and, at each reachable node, relaxing its label with
      * the new route (and with routes merged into or split from the existing
-     * solution). Stops once capacity is exceeded, then deregisters from the
-     * graph's {@link Phaser}.
+     * solution, those taken in random order). Stops once capacity is exceeded,
+     * then deregisters from the graph's {@link Phaser}.
      */
     @Override
     protected void compute() {
@@ -53,14 +56,23 @@ public class ArcSetter extends RecursiveAction {
             int cumulative_demand = 0;
             double cumulative_distance = 0d;
             final List<Integer> sequence_as_list = new LinkedList<>();
+            // random route order: the first improving combination wins, so a fixed order
+            // would always favour the same routes. The solution is not mutated during the
+            // walk, so one shuffle up front serves every node.
+            final List<Route> old_routes;
+            if (this.Solution != null) {
+                old_routes = new ArrayList<>(this.Solution.getRoutes());
+                Collections.shuffle(old_routes, ThreadLocalRandom.current());
+            }
+            else
+                old_routes = null;
             // Setters already queued in the pool when the stop arrived would otherwise each
             // walk the whole tour running local search, so the walk checks the flag too.
             while (i < this.graph.getLength() && !this.graph.getData().isStopRequested()) {
                 length++;
                 AuxiliaryGraphNode EndingNode = this.graph.getNode(++i);
                 // if (this.Solution != null 
-                //     && (this.Solution.getTotalDistance() >= EndingNode.getLabel() 
-                //     || this.Solution.getLeftoverLoad() >= EndingNode.getLeftoverLoad())) {
+                //     && (this.Solution.getTotalDistance() >= EndingNode.getLabel() || this.Solution.getLeftoverLoad() >= EndingNode.getLeftoverLoad())) {
                 //     this.NodeProcessingWith++;
                 //     this.graph.setNewSetters(EndingNode);
                 //     continue;
@@ -88,7 +100,7 @@ public class ArcSetter extends RecursiveAction {
                 }
                 boolean c = true;
                 if (this.Solution != null) 
-                    for (Route old_route : this.Solution.getRoutes()) {
+                    for (Route old_route : old_routes) {
                         final int combined_demand = old_route.getSumDemand() + cumulative_demand;
                         if (combined_demand <= this.graph.getData().getCapacity()
                             && this.Solution.getRoutesCount() <= this.graph.getData().getMaxVehicleNumber()) {

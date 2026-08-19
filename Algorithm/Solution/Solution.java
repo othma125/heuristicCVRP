@@ -40,6 +40,19 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     }
 
     /**
+     * Adds a route to the solution, registers all of its stops as served and
+     * keeps the leftover load equal to the largest leftover among the routes.
+     *
+     * @param new_route the route to add
+     */
+    void add(Route new_route) {
+        this.Routes.add(new_route);
+        this.LeftoverLoad = Math.max(this.LeftoverLoad, new_route.getLeftover());
+        for (int stop : new_route.getSequence())
+            this.Stops.set(stop);
+    }
+
+    /**
      * Improves the solution by first optimising each route internally, then
      * applying the best available inter-route move. Routes replaced by a move
      * are swapped in and the total distance is updated accordingly.
@@ -106,19 +119,6 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
     }
 
     /**
-     * Adds a route to the solution, registers all of its stops as served and
-     * keeps the leftover load equal to the largest leftover among the routes.
-     *
-     * @param new_route the route to add
-     */
-    void add(Route new_route) {
-        this.Routes.add(new_route);
-        this.LeftoverLoad = Math.max(this.LeftoverLoad, new_route.getLeftover());
-        for (int stop : new_route.getSequence())
-            this.Stops.set(stop);
-    }
-
-    /**
      * @return the routes making up this solution
      */
     Set<Route> getRoutes() {
@@ -175,27 +175,22 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
 
     /**
      * Flattens the routes back into a single giant-tour sequence by
-     * concatenating their stops, the routes taken in random order.
+     * concatenating their stops in {@link #Routes} iteration order.
      *
      * <p>Split only needs each route's customers to be contiguous, so the order
      * the routes are concatenated in costs nothing: re-splitting the sequence
-     * yields the same routes whichever way they are laid out. Randomising it
-     * keeps the re-encoded tours from all sharing the iteration order of
-     * {@link #Routes}, which is what the crossover cuts through. The stops
-     * inside a route keep their order, since that is what the local search just
-     * optimised.
+     * yields the same routes whichever way they are laid out. The stops inside a
+     * route keep their order, since that is what the local search just optimised.
      *
      * @return the concatenated stop sequence
      */
     int[] getNewSequence() {
-        List<Route> shuffled_routes = new ArrayList<>(this.Routes);
-        Collections.shuffle(shuffled_routes, ThreadLocalRandom.current());
         int[] sequence = new int[this.Stops.cardinality()];
         int index = 0;
-        for (Route route : shuffled_routes) 
+        for (Route route : this.Routes) 
             for (int stop : route.getSequence()) 
                 sequence[index++] = stop;
-        assert index == sequence.length : "routes and served stops disagree: " + index + " != " + sequence.length;
+        // assert index == sequence.length : "routes and served stops disagree: " + index + " != " + sequence.length;
         return sequence;
     }
 

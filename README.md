@@ -89,7 +89,9 @@ Carrying labels that leave a lot of spare capacity — even when they cost more 
 lets the split place the remaining customers on tight, vehicle-limited instances, so a
 first feasible solution is reached markedly faster than with a single shortest-path label.
 Labels are relaxed unconditionally; the pruning tests are kept in the source, commented
-out, since discarding labels early was what made feasibility hard to reach.
+out, since discarding labels early was what made feasibility hard to reach. A re-split
+keeps its new graph only when it beats the bound it was given, so re-splitting a tour
+either improves it or leaves it untouched.
 
 This guarantees:
 - Capacity feasibility
@@ -147,8 +149,9 @@ Moves implemented:
 Local search is executed **inside the auxiliary graph context**, allowing high-quality
 improvements without breaking feasibility. Every candidate route is optimised as it is
 relaxed into a node, and the inter-route search chains up to `max(10, sqrt(routes))` moves
-per call, scanning route pairs in random order so the same pairs are not always improved
-first.
+per call. Route order is randomised wherever the first improving move wins — both when the
+inter-route search scans route pairs and when a label's existing routes are tried against a
+new one — so the same routes are not always improved first.
 
 ---
 
