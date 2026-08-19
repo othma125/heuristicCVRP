@@ -114,7 +114,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      */
     private boolean Split(InputData data, double bound) {
         boolean c = false;
-        if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getParetoSetCount() == 1) {
+        if (this.AuxiliaryGraph == null) {
             AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, this);
             if (graph.getLabel() < bound) {
                 c = true;

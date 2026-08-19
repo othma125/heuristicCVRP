@@ -125,7 +125,11 @@ public class GeneticAlgorithm extends MetaHeuristic {
         else {
             // repeat splitting procedure to discover more improvement possibilities
             boolean c1 = parent1.Split(this.Data);
+            if (c1)
+                this.setBestSolution(parent1);
             boolean c2 = parent2.Split(this.Data);
+            if (c2)
+                this.setBestSolution(parent2); 
             if (c1 || c2) {
                 this.PopulationLock.lock();
                 try {

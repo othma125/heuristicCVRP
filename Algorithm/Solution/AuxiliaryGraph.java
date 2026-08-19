@@ -155,13 +155,6 @@ public class AuxiliaryGraph implements AutoCloseable {
     }
 
     /**
-     * @return the number of Pareto-optimal solutions at the sink node
-     */
-    int getParetoSetCount() {
-        return this.getLastNode().getParetoSet().size();
-    }
-
-    /**
      * @return the CVRPLIB route listing of the optimal split
      */
     String export() {

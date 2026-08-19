@@ -52,7 +52,7 @@ public abstract class MetaHeuristic {
     public boolean setBestSolution(GiantTour new_gt) {
         this.BestLock.lock();
         try {
-            if (this.BestGiantTour == null || new_gt.compareTo(this.BestGiantTour) < 0) {
+            if (this.BestGiantTour == null || new_gt == this.BestGiantTour || new_gt.compareTo(this.BestGiantTour) < 0) {
                 this.BestSolutionReachingTime = System.currentTimeMillis();
                 this.BestGiantTour = new_gt;
                 System.out.println(this.BestGiantTour.getFitness() + " after " + (this.BestSolutionReachingTime  - this.StartTime) + " ms");
