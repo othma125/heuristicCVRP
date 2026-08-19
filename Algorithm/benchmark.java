@@ -44,6 +44,8 @@ public class benchmark {
             System.err.println("Directory not found or empty: " + dir.getAbsolutePath());
             return;
         }
+        // Sum of each algorithm's own running time; boxed so the forEach below can add to it
+        long[] totalRunTime = {0};
         // Output CSV
         String outputFile = "results " + benchmarkDirPath.replace("/", ".") +".csv";
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
@@ -99,6 +101,7 @@ public class benchmark {
                         InputData data = entry.getValue();
                         MetaHeuristic algorithm = new GeneticAlgorithm(data);
                         algorithm.Run();
+                        totalRunTime[0] += algorithm.getRunningTime();
                         if (algorithm.isFeasible()) {
                             GiantTour gt = algorithm.getBestGiantTour();
                             System.out.println(gt);
@@ -135,5 +138,6 @@ public class benchmark {
             System.err.println("Error writing results: " + e.getMessage());
         }
         System.out.println("All results stored in \"" + outputFile + "\"");
+        System.out.println("Total run time = " + totalRunTime[0] + " ms");
     }
 }

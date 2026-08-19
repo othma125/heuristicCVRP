@@ -205,7 +205,7 @@ Edit `Algorithm/main.java`:
 Then run:
 
 ```bash
-java -Xmx4g -cp out main
+java -Xmx4g -cp out Algorithm.main
 ```
 
 Recommended JVM options for large instances:
@@ -222,12 +222,14 @@ Edit `Algorithm/benchmark.java`:
 Then run:
 
 ```bash
-java -Xmx4g -cp out benchmark
+java -Xmx4g -cp out Algorithm.benchmark
 ```
 
 This solves every `.vrp` instance in the directory (in ascending size order),
 looks up each best-known cost from its `.sol` / `.opt.sol` / `.bst.sol` file,
 and writes a `results <dir>.csv` report with the optimality gap per instance.
+It closes with the total solving time, summed over each instance's own reported
+running time (infeasible instances report 0, so the total excludes them).
 
 ### Run a campaign (loop-until-feasible benchmark)
 
