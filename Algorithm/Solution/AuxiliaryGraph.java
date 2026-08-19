@@ -169,11 +169,12 @@ public class AuxiliaryGraph implements AutoCloseable {
     }
 
     /**
-     * Applies inter-route local search to the optimal split and returns its
-     * flattened giant-tour sequence.
+     * Returns the flattened giant-tour sequence of the optimal split. Inter-route
+     * local search is applied to the sink's Pareto set in the constructor, so the
+     * returned sequence already reflects those improvements.
      *
      * @param data the problem instance
-     * @return the improved sequence
+     * @return the flattened sequence of the optimal split
      */
     int[] getNewSequence(InputData data) {
         return this.getLastNode().getNewSequence(data);

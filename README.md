@@ -103,11 +103,12 @@ Implemented in `Algorithm/Metaheuristics/GeneticAlgorithm.java`.
 
 ### Population
 - Initialized using randomized giant tours
-- On instances with a vehicle limit (`-kN`), half the tours are instead built by
-  randomized Best-Fit Decreasing bin packing into that many routes, then emitted in
-  random route order with each route shuffled. This makes a feasible split far more
-  likely on tight instances; the other half stay purely random, since packed tours
-  alone converge to worse optima. Instances with no vehicle limit stay purely random.
+- On instances with a vehicle limit (`-kN`), the tours are built by randomized
+  Best-Fit Decreasing bin packing into that many routes, then emitted in random
+  route order with each route shuffled. This makes a feasible split far more
+  likely on tight instances. Instances with no vehicle limit stay purely random,
+  since feasibility is never the bottleneck there and plain random tours converge
+  to better optima.
 - Each individual is decoded using the auxiliary graph
 - The first individual probes feasibility (up to 100 attempts, otherwise the run
   aborts); once it succeeds the remaining individuals are generated concurrently,
@@ -145,8 +146,9 @@ Moves implemented:
 
 Local search is executed **inside the auxiliary graph context**, allowing high-quality
 improvements without breaking feasibility. Every candidate route is optimised as it is
-relaxed into a node, and the inter-route search chains up to ten moves per call, scanning
-route pairs in random order so the same pairs are not always improved first.
+relaxed into a node, and the inter-route search chains up to `max(10, sqrt(routes))` moves
+per call, scanning route pairs in random order so the same pairs are not always improved
+first.
 
 ---
 
@@ -157,9 +159,9 @@ route pairs in random order so the same pairs are not always improved first.
 - Parallel:
   - Fitness evaluations
   - Auxiliary graph construction
-  - Local search moves, except the final pass over a node's Pareto set: its labels
-    share their `Route` objects and the moves rewrite sequences in place, so that pass
-    is sequential
+  - Local search moves, except the passes over a node's Pareto set: its labels
+    share their `Route` objects and the moves rewrite sequences in place, so both the
+    final local-search pass and the re-split of the Pareto labels are sequential
 
 Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.java`.
 

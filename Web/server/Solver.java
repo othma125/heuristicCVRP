@@ -109,20 +109,21 @@ final class Solver {
             }
         }, 5, 5, TimeUnit.SECONDS);
         try {
-            InputData data = new InputData(instance.getPath().replace("\\", "//"));
-            GeneticAlgorithm algo = new GeneticAlgorithm(data);
-            this.current = algo;
-            algo.Run();
-            System.setOut(original);
+            try (InputData data = new InputData(instance.getPath().replace("\\", "//"))) {
+                GeneticAlgorithm algo = new GeneticAlgorithm(data);
+                this.current = algo;
+                algo.Run();
+                System.setOut(original);
 
-            if (algo.isFeasible()) {
-                GiantTour gt = algo.getBestGiantTour();
-                gt.export(data); // writes Output/<instance>/... and lets us read routes back
-                Http.sse(out, "sol", solOf(data, gt));
-                Http.sse(out, "result", resultJson(true, (int) gt.getFitness(), algo.getRunningTime(),
-                        routesOf(data, gt), Instances.optimalOf(instance)));
-            } else {
-                Http.sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
+                if (algo.isFeasible()) {
+                    GiantTour gt = algo.getBestGiantTour();
+                    gt.export(data); // writes Output/<instance>/... and lets us read routes back
+                    Http.sse(out, "sol", solOf(data, gt));
+                    Http.sse(out, "result", resultJson(true, (int) gt.getFitness(), algo.getRunningTime(),
+                            routesOf(data, gt), Instances.optimalOf(instance)));
+                } else {
+                    Http.sse(out, "result", resultJson(false, 0, 0, "[]", Double.NaN));
+                }
             }
         } catch (Exception e) {
             System.setOut(original);

@@ -34,7 +34,8 @@ public class AuxiliaryGraphNode implements AutoCloseable {
 
     /**
      * Relaxes this node with a solution formed by extending {@code old_solution}
-     * with one new route, keeping it only if it improves the node's label.
+     * with one new route, keeping it only if it improves the node's label or
+     * leftover load.
      *
      * @param old_solution the partial solution reaching the predecessor node,
      *                     or {@code null} for the source
@@ -70,7 +71,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
     /**
      * Relaxes this node with a solution obtained by replacing {@code old_route}
      * with {@code new_route} in {@code old_solution}, keeping it if it improves
-     * either the cost or the vehicle count.
+     * either the cost or the leftover load.
      *
      * @param old_solution the partial solution to derive from
      * @param old_route    the route being replaced
@@ -83,8 +84,6 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         this.Lock.lock();
         try {
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
-            // old_route leaves the solution, so its leftover is excluded; the scan it
-            // costs is short-circuited away whenever the label alone already improves
             if (label < this.getLabel()
                     || Math.max(old_solution.getLeftoverLoadWithout(old_route), new_route.getLeftover()) < this.getLeftoverLoad()) {
                 c = this.isFeasible();
@@ -227,7 +226,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
     }
 
     /**
-     * @return the leftover load of the best solution, or
+     * @return the minimum leftover load among all solutions at this node, or
      *         {@link Integer#MAX_VALUE} if infeasible
      */
     int getLeftoverLoad() {
@@ -235,11 +234,13 @@ public class AuxiliaryGraphNode implements AutoCloseable {
     }
 
     /**
-     * Runs inter-route local search on the best solution and returns its
-     * flattened giant-tour sequence.
+     * Returns the flattened giant-tour sequence of the best solution. Inter-route
+     * local search is applied to the sink's Pareto set in the
+     * {@link AuxiliaryGraph} constructor, so the returned sequence already
+     * reflects those improvements.
      *
      * @param data the problem instance
-     * @return the improved sequence, or {@code null} if infeasible
+     * @return the flattened sequence of the best solution, or {@code null} if infeasible
      */
     int[] getNewSequence(InputData data) {
         if (this.isFeasible()) {

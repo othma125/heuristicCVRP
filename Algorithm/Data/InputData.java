@@ -22,7 +22,7 @@ import java.io.IOException;
  *
  * @author Othmane EL YAAKOUBI
  */
-public class InputData {
+public class InputData implements AutoCloseable {
     
     public final String FileName;
     private int Dimension;
@@ -46,6 +46,15 @@ public class InputData {
      */
     public boolean isStopRequested() {
         return this.StopRequested;
+    }
+
+    /**
+     * Requests any split work running on this instance to abort.
+     * This method is called automatically when used with try-with-resources.
+     */
+    @Override
+    public void close() {
+        this.StopRequested = true;
     }
 
     /**

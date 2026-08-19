@@ -39,24 +39,22 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
         this.Stops = new BitSet();
     }
 
-    /** Maximum number of inter-route moves applied by one local search call. */
-    private static final int MAX_PASSES = 10;
-
     /**
      * Improves the solution by first optimising each route internally, then
      * applying the best available inter-route move. Routes replaced by a move
      * are swapped in and the total distance is updated accordingly.
      *
      * <p>Each applied move is followed by another pass, up to
-     * {@value #MAX_PASSES} of them, since a move creates two new routes the
-     * remaining ones may now combine with. The cap keeps the cost bounded: the
-     * search is called on every solution of every Pareto set, so descending all
-     * the way to a local optimum would starve the genetic loop of generations.
+     * max(10, sqrt(routes count)) of them, since a move creates two new routes
+     * the remaining ones may now combine with. The cap keeps the cost bounded:
+     * the search is called on every solution of every Pareto set, so descending
+     * all the way to a local optimum would starve the genetic loop of generations.
      *
      * @param data the problem instance providing distances and capacity
      */
     void InterRoutesLocalSearch(InputData data) {
-        this.InterRoutesLocalSearch(data, MAX_PASSES);
+        int passes = Math.max(10, (int) Math.sqrt(this.Routes.size()));
+        this.InterRoutesLocalSearch(data, passes);
     }
 
     /**

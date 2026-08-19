@@ -66,7 +66,9 @@ public class campaign {
                 long offset = 0;
                 while (attempts < MAX_ATTEMPTS) {
                     offset = System.currentTimeMillis() - metaStart;
+                    InputData prevData = data;
                     data = new InputData(vrps[i].getPath());
+                    if (prevData != null) prevData.close();
                     algo = new GeneticAlgorithm(data);
                     try {
                         algo.Run();
@@ -95,6 +97,8 @@ public class campaign {
                     bestTour = algo.getBestGiantTour();
                     bestData = data;
                 }
+                // Close the InputData from this run
+                data.close();
             }
 
             if (results.isEmpty()) {
@@ -121,6 +125,9 @@ public class campaign {
                     name, best.cost(), Double.isNaN(known) ? "NA" : String.valueOf((int) known), gap,
                     best.wallMs(), best.ttsMs(), meanWall, meanAtt, minAtt, maxAtt, RUNS, results.size());
             csv.flush();
+
+            // Close the best InputData instance
+            if (bestData != null) bestData.close();
 
             progress(i + 1, vrps.length, name, best.cost(), campaignStart);
         }

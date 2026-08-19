@@ -102,12 +102,12 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
 
     /**
      * Splits the giant tour into routes via the auxiliary graph. When the graph
-     * is infeasible, the feasible prefix is kept and the remaining tail is
-     * randomly shuffled before retrying, as long as progress is being made.
+     * is infeasible, it is discarded; when it already holds a Pareto set, each
+     * Pareto-optimal solution is re-split recursively and the best feasible
+     * result is kept.
      *
-     * @param data              the problem instance
-     * @param bound             cost upper bound used to prune the graph
-     * @param feasibility_index the furthest feasible node reached so far, used to detect and stop non-progressing retries
+     * @param data  the problem instance
+     * @param bound cost upper bound used to prune the graph
      */
     private void Split(InputData data, double bound) {
         if (this.AuxiliaryGraph == null || this.AuxiliaryGraph.getParetoSetCount() == 1) {
@@ -120,7 +120,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
         else {
             var feasibleTours = this.AuxiliaryGraph.getLastNode()
                                                     .getParetoSet()
-                                                    .parallelStream()
+                                                    .stream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
                                                     .peek(gt -> gt.Split(data, bound))
                                                     .filter(GiantTour::isFeasible)
@@ -150,10 +150,9 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * needs each route's customers to be contiguous, and keeping the order random
      * preserves the population diversity the crossover feeds on.
      *
-     * <p>Only half the tours are packed this way, and none at all when the instance
-     * sets no vehicle limit: the packing buys feasibility on tight instances but
-     * converges to worse optima than a plain shuffle, so the rest stay shuffled and
-     * the population ends up holding both kinds.
+     * <p>When the instance sets no vehicle limit the packing is skipped entirely:
+     * feasibility is never the bottleneck, and plain random tours converge to better
+     * optima, so the sequence stays a plain shuffle.
      *
      * @param data the problem instance
      */

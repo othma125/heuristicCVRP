@@ -26,17 +26,18 @@ public class main {
         
         // InputData data = new InputData("Algorithm/CVRPLib/QOBLIB/XSH-n20-k4-51.vrp");
         // InputData data = new InputData("Algorithm/CVRPLib/B/B-n57-k7.vrp");
-        InputData data = new InputData("Algorithm/CVRPLib/XL/XL-n1048-k237.vrp");
-        GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
-        algorithm.Run();
-        
-        if (algorithm.isFeasible()) {
-            GiantTour gt = algorithm.getBestGiantTour();
-            System.out.println(gt);
-            //gt.export(data);
-            System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms");
+        try (InputData data = new InputData("Algorithm/CVRPLib/XL/XL-n1048-k237.vrp")) {
+            GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
+            algorithm.Run();
+            
+            if (algorithm.isFeasible()) {
+                GiantTour gt = algorithm.getBestGiantTour();
+                System.out.println(gt);
+                //gt.export(data);
+                System.out.println("\nEnd Time = " + algorithm.getRunningTime() + " ms");
+            }
+            else
+                System.out.println("No feasible solution found\n");
         }
-        else
-            System.out.println("No feasible solution found\n");
     }
 }

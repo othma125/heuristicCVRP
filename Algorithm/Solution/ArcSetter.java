@@ -58,11 +58,13 @@ public class ArcSetter extends RecursiveAction {
             while (i < this.graph.getLength() && !this.graph.getData().isStopRequested()) {
                 length++;
                 AuxiliaryGraphNode EndingNode = this.graph.getNode(++i);
-                if (this.Solution != null && this.Solution.getTotalDistance() >= EndingNode.getLabel()) {
-                    this.NodeProcessingWith++;
-                    this.graph.setNewSetters(EndingNode);
-                    continue;
-                }
+                // if (this.Solution != null 
+                //     && (this.Solution.getTotalDistance() >= EndingNode.getLabel() 
+                //     || this.Solution.getLeftoverLoad() >= EndingNode.getLeftoverLoad())) {
+                //     this.NodeProcessingWith++;
+                //     this.graph.setNewSetters(EndingNode);
+                //     continue;
+                // }
                 while (sequence_as_list.size() < length) {
                     int stop = this.GiantTour.getStop(j++ % this.graph.getLength());
                     if (this.Solution == null || !this.Solution.contains(stop)) {
