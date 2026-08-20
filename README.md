@@ -165,8 +165,13 @@ new one — so the same routes are not always improved first.
   - Local search moves, except the passes over a node's Pareto set: its labels
     share their `Route` objects and the moves rewrite sequences in place, so both the
     final local-search pass and the re-split of the Pareto labels are sequential
+  - Crossovers, including the nested one spawned when an offspring becomes the new
+    incumbent: it cannot be awaited where it is created, since that thread holds the
+    population lock, so its future is queued and joined at the end of the generation
 
-Thread pool management is handled in `Algorithm/Metaheuristics/MetaHeuristic.java`.
+Everything above runs on the common pool through parallel streams, except crossovers,
+which use the dedicated 2-thread pool in `Algorithm/Metaheuristics/GeneticAlgorithm.java`
+so that nested parallel work over the split graph keeps the common pool free.
 
 ---
 

@@ -5,6 +5,7 @@ package Algorithm.Metaheuristics;
 import Algorithm.Data.InputData;
 import Algorithm.Solution.GiantTour;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,6 +40,10 @@ public class GeneticAlgorithm extends MetaHeuristic {
         return thread;
     });
     private final ReentrantLock PopulationLock = new ReentrantLock();
+    // Nested crossovers spawned from UpdatePopulation: they cannot be awaited there
+    // (the caller holds PopulationLock), so they are parked here and joined by the
+    // generation loop, which runs lock-free on the calling thread.
+    private final ConcurrentLinkedQueue<Future<Boolean>> PendingCrossovers = new ConcurrentLinkedQueue<>();
 
     
     /**
@@ -74,14 +79,20 @@ public class GeneticAlgorithm extends MetaHeuristic {
 
     /**
      * Runs one crossover per individual (a generation), each on
-     * {@link #CrossoverPool}.
+     * {@link #CrossoverPool}, then joins every nested crossover they spawned so
+     * a generation never leaks unfinished work into the next one. Joining can
+     * itself spawn more, hence the drain until the queue runs dry.
      *
-     * @return {@code true} if any crossover improved the incumbent
+     * @return {@code true} if any crossover, nested ones included, improved the
+     *         incumbent
      */
     private boolean runCrossovers() {
         boolean crossoverResult = false;
         for (int i = 0; i < this.PopulationSize && !this.isStopRequested(); i++)
             if (await(CrossoverPool.submit(this::Crossover)))
+                crossoverResult = true;
+        while (!this.PendingCrossovers.isEmpty())
+            if (await(this.PendingCrossovers.poll()))
                 crossoverResult = true;
         return crossoverResult;
     }
@@ -147,8 +158,9 @@ public class GeneticAlgorithm extends MetaHeuristic {
      * Inserts an offspring into the population if it beats the worst
      * individual, replacing a random member of the worse half and re-sorting.
      * When the offspring becomes the new best, it is further recombined with
-     * the best and a random individual. Held under {@link #PopulationLock} so
-     * the replacement and the re-sort cannot interleave with another update.
+     * the best and a random individual, asynchronously on {@link #CrossoverPool}.
+     * Held under {@link #PopulationLock} so the replacement and the re-sort
+     * cannot interleave with another update.
      *
      * @param newGiantTour the candidate offspring
      * @return {@code true} if the offspring became the new incumbent
@@ -157,15 +169,17 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (newGiantTour == null || !newGiantTour.isFeasible())
             return false;
         boolean c = false;
-        // reentrant: the nested call below re-enters with the lock already held
         this.PopulationLock.lock();
         try {
             if (newGiantTour.compareTo(this.getLast()) < 0) {
                 int half = this.PopulationSize / 2;
                 int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
                 if (this.setBestSolution(newGiantTour)) {
-                    GiantTour graph_crossover = new GiantTour(this.Data, newGiantTour, this.Population[0], this.Population[randomIndex]);
-                    this.UpdatePopulation(graph_crossover);
+                    // Awaiting here would deadlock on the lock this thread holds, so the
+                    // task is queued for runCrossovers to join. Partners are captured now,
+                    // before the slot is overwritten below.
+                    GiantTour mate = this.Population[randomIndex];
+                    this.PendingCrossovers.add(CrossoverPool.submit(() -> this.UpdatePopulation(new GiantTour(this.Data, newGiantTour, mate))));
                     c = true;
                 }
                 this.Population[randomIndex] = newGiantTour;
