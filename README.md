@@ -161,9 +161,12 @@ only the positions change. This cuts the allocation of the local-search hot path
 
 The split walk accumulates its candidate route in a growing `int[]` buffer instead of a
 boxed `LinkedList<Integer>`, and combined routes are assembled with `System.arraycopy`
-instead of per-element copy loops. The combined routes use the pre-local-search order of
-the new route (the snapshot in the buffer), matching the original behaviour where the
-combined route is a different route whose optimum is not the standalone route's optimum.
+instead of per-element copy loops. The combined route cost is computed in O(1) by
+`Route.concatCost`, which subtracts the two depot legs at the junction and adds the arc
+that replaces them, rather than walking the concatenated sequence. The combined routes use
+the pre-local-search order of the new route (the snapshot in the buffer), matching the
+original behaviour where the combined route is a different route whose optimum is not the
+standalone route's optimum.
 
 ---
 

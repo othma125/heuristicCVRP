@@ -350,6 +350,25 @@ public final class Route implements Comparable<Route>, AutoCloseable {
     }
 
     /**
+     * Prices the route that serves a head segment then a tail segment without
+     * walking the concatenation: the two known costs, minus the depot legs at
+     * the junction, plus the arc that replaces them.
+     *
+     * @param data       the problem instance providing distances
+     * @param head_cost  the travelled distance of the head segment
+     * @param head_last  the last stop of the head segment
+     * @param tail_cost  the travelled distance of the tail segment
+     * @param tail_first the first stop of the tail segment
+     * @return the travelled distance of the concatenated route
+     */
+    public static double concatCost(InputData data, double head_cost, int head_last, double tail_cost, int tail_first) {
+        return head_cost + tail_cost
+                - data.getStopToDepotDistance(head_last)
+                - data.getDepotToStopDistance(tail_first)
+                + data.getTwoStopsDistance(head_last, tail_first);
+    }
+
+    /**
      * @return the backing stop sequence (not a copy)
      */
     public int[] getSequence() {

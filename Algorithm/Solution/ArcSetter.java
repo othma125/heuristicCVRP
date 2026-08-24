@@ -106,18 +106,20 @@ public class ArcSetter extends RecursiveAction {
                 }
                 if (this.Solution != null) {
                     // The combined routes use the pre-local-search order of the new route
-                    // (the snapshot in `sequence`), not the post-LS order of `new_route`:
-                    // the original code built them from `sequence_as_array` taken before
-                    // IntraRoutesLocalSearch permuted the route, and the combined route is
-                    // a different route whose optimum is not the standalone route's optimum.
+                    // (the snapshot in `sequence` with cost `distance`), not the post-LS
+                    // order of `new_route`: the combined route is a different route whose
+                    // optimum is not the standalone route's optimum.
                     final int new_len = size;
+                    final int new_first = sequence[0];
+                    final int new_last = sequence[new_len - 1];
                     for (Route old_route : old_routes) {
                         final int combined_demand = old_route.getSumDemand() + cumulative_demand;
                         if (combined_demand <= data.getCapacity() && this.Solution.getRoutesCount() <= data.getMaxVehicleNumber()) {
                             int[] combined_sequence1 = new int[old_route.getLength() + new_len];
                             System.arraycopy(old_route.getSequence(), 0, combined_sequence1, 0, old_route.getLength());
                             System.arraycopy(sequence, 0, combined_sequence1, old_route.getLength(), new_len);
-                            Route combined_route1 = new Route(data, combined_sequence1);
+                            Route combined_route1 = new Route(data, combined_sequence1, combined_demand,
+                                    Route.concatCost(data, old_route.getTraveledDistance(), old_route.getLast(), distance, new_first));
                             if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route1)) {
                                 combined_route1.IntraRoutesLocalSearch(data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);  
@@ -125,7 +127,8 @@ public class ArcSetter extends RecursiveAction {
                             int[] combined_sequence2 = new int[old_route.getLength() + new_len];
                             System.arraycopy(sequence, 0, combined_sequence2, 0, new_len);
                             System.arraycopy(old_route.getSequence(), 0, combined_sequence2, new_len, old_route.getLength());
-                            Route combined_route2 = new Route(data, combined_sequence2);
+                            Route combined_route2 = new Route(data, combined_sequence2, combined_demand,
+                                    Route.concatCost(data, distance, new_last, old_route.getTraveledDistance(), old_route.getFirst()));
                             if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route2)) {
                                 combined_route2.IntraRoutesLocalSearch(data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
