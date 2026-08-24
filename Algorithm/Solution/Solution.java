@@ -75,11 +75,11 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
      * @param passes the number of moves still allowed
      */
     private void InterRoutesLocalSearch(InputData data, int passes) {
-        this.Routes.forEach(r -> {
-            double old_distance = r.getTraveledDistance();
-            r.IntraRoutesLocalSearch(data);
-            this.TotalDistance += r.getTraveledDistance() - old_distance;
-        });
+        // this.Routes.forEach(r -> {
+        //     double old_distance = r.getTraveledDistance();
+        //     r.IntraRoutesLocalSearch(data);
+        //     this.TotalDistance += r.getTraveledDistance() - old_distance;
+        // });
         // random pair order: the first improving move found is applied, so scanning
         // the routes in a fixed order would always favour the same pairs
         List<Route> shuffled_routes = new ArrayList<>(this.Routes);
@@ -95,10 +95,12 @@ public final class Solution implements Comparable<Solution>, AutoCloseable {
                         this.Routes.remove(r2);
                         this.TotalDistance -= r2.getTraveledDistance();
                         if (lsm.getFirstRoute() != null) {
+                            // lsm.getFirstRoute().IntraRoutesLocalSearch(data);
                             this.Routes.add(lsm.getFirstRoute());
                             this.TotalDistance += lsm.getFirstRoute().getTraveledDistance();
                         }
                         if (lsm.getSecondRoute() != null) {
+                            // lsm.getSecondRoute().IntraRoutesLocalSearch(data);
                             this.Routes.add(lsm.getSecondRoute());
                             this.TotalDistance += lsm.getSecondRoute().getTraveledDistance();
                         }

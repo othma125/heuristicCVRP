@@ -153,6 +153,18 @@ per call. Route order is randomised wherever the first improving move wins — b
 inter-route search scans route pairs and when a label's existing routes are tried against a
 new one — so the same routes are not always improved first.
 
+Move instances are reused within a neighbourhood scan: each search builds one move per
+neighbourhood and re-aims it at every candidate with `reset(i, j)` instead of allocating
+one move object per candidate. The routes a move works on are fixed for the whole scan, so
+only the positions change. This cuts the allocation of the local-search hot path by ~95%
+(82 → 4.7 MB for 200 `getLSM` scans on X-n157-k13, 548 → 7.2 MB for `StagnationBreaker`).
+
+The split walk accumulates its candidate route in a growing `int[]` buffer instead of a
+boxed `LinkedList<Integer>`, and combined routes are assembled with `System.arraycopy`
+instead of per-element copy loops. The combined routes use the pre-local-search order of
+the new route (the snapshot in the buffer), matching the original behaviour where the
+combined route is a different route whose optimum is not the standalone route's optimum.
+
 ---
 
 ## Parallelism

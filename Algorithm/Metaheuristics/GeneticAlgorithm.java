@@ -175,12 +175,12 @@ public class GeneticAlgorithm extends MetaHeuristic {
                 int half = this.PopulationSize / 2;
                 int randomIndex = half + ThreadLocalRandom.current().nextInt(this.Population.length - half);
                 if (this.setBestSolution(newGiantTour)) {
+                    c = true;
                     // Awaiting here would deadlock on the lock this thread holds, so the
                     // task is queued for runCrossovers to join. Partners are captured now,
                     // before the slot is overwritten below.
                     GiantTour mate = this.Population[randomIndex];
                     this.PendingCrossovers.add(CrossoverPool.submit(() -> this.UpdatePopulation(new GiantTour(this.Data, newGiantTour, mate))));
-                    c = true;
                 }
                 this.Population[randomIndex] = newGiantTour;
                 Arrays.sort(this.Population);
@@ -225,23 +225,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (this.isStopRequested())
             return;
         Arrays.sort(this.Population);
-    }
-    
-    /**
-     * Stagnation-based stopping rule: always continues while the last
-     * improvement is within {@code StagnationMinTime}, then continues with a
-     * probability that decays as the stagnation stretch grows relative to the
-     * total elapsed time.
-     *
-     * @return {@code true} if the search should keep running
-     */
-    private boolean nonStopCondition() {
-        long current_time = System.currentTimeMillis();
-        if (current_time - this.BestSolutionReachingTime <= this.StagnationMinTime)
-            return true;
-        double probability = current_time - this.BestSolutionReachingTime - this.StagnationMinTime;
-        probability /= (double) (current_time - this.StartTime);
-        return ThreadLocalRandom.current().nextDouble() > probability;
     }
     
     /**

@@ -2,10 +2,11 @@
 
 package Algorithm.Solution;
 
+import Algorithm.Data.InputData;
 import Algorithm.Solution.LSM.LocalSearchMove;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.RecursiveAction;
@@ -50,12 +51,17 @@ public class ArcSetter extends RecursiveAction {
     @Override
     protected void compute() {
         try {
+            final InputData data = this.graph.getData();
             int i = this.StartingNode.NodeIndex;
             int j = this.StartingNode.NodeIndex;
             int length = 0;
             int cumulative_demand = 0;
             double cumulative_distance = 0d;
-            final List<Integer> sequence_as_list = new LinkedList<>();
+            // The walk grows this buffer and copies it out per candidate route: an int[]
+            // keeps the accumulation free of boxing and makes reading the stop just added
+            // an array access instead of a linked list traversal.
+            int[] sequence = new int[16];
+            int size = 0;
             // random route order: the first improving combination wins, so a fixed order
             // would always favour the same routes. The solution is not mutated during the
             // walk, so one shuffle up front serves every node.
@@ -68,7 +74,7 @@ public class ArcSetter extends RecursiveAction {
                 old_routes = null;
             // Setters already queued in the pool when the stop arrived would otherwise each
             // walk the whole tour running local search, so the walk checks the flag too.
-            while (i < this.graph.getLength() && !this.graph.getData().isStopRequested()) {
+            while (i < this.graph.getLength() && !data.isStopRequested()) {
                 length++;
                 AuxiliaryGraphNode EndingNode = this.graph.getNode(++i);
                 // if (this.Solution != null 
@@ -77,69 +83,64 @@ public class ArcSetter extends RecursiveAction {
                 //     this.graph.setNewSetters(EndingNode);
                 //     continue;
                 // }
-                while (sequence_as_list.size() < length) {
+                while (size < length) {
                     int stop = this.GiantTour.getStop(j++ % this.graph.getLength());
                     if (this.Solution == null || !this.Solution.contains(stop)) {
-                        cumulative_demand += this.graph.getData().getDemand(stop);
-                        if (sequence_as_list.isEmpty())
-                            cumulative_distance += this.graph.getData().getDepotToStopDistance(stop);
-                        else
-                            cumulative_distance += this.graph.getData().getTwoStopsDistance(sequence_as_list.get(sequence_as_list.size() - 1), stop);
-                        sequence_as_list.add(stop);
+                        cumulative_demand += data.getDemand(stop);
+                        cumulative_distance += size == 0 ? data.getDepotToStopDistance(stop)
+                                                        : data.getTwoStopsDistance(sequence[size - 1], stop);
+                        if (size == sequence.length)
+                            sequence = Arrays.copyOf(sequence, 2 * size);
+                        sequence[size++] = stop;
                     }
                 }
-                int[] sequence_as_array = sequence_as_list.stream().mapToInt(Integer::intValue).toArray();
-                double distance = cumulative_distance + this.graph.getData().getStopToDepotDistance(sequence_as_list.get(sequence_as_list.size() - 1));
-                Route new_route = new Route(this.graph.getData(), sequence_as_array, cumulative_demand, distance);
-                if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= this.graph.getData().getMaxVehicleNumber()
-                    && cumulative_demand <= this.graph.getData().getCapacity()) {
+                double distance = cumulative_distance + data.getStopToDepotDistance(sequence[size - 1]);
+                // The route owns its sequence and permutes it in place, so it gets a copy.
+                Route new_route = new Route(data, Arrays.copyOf(sequence, size), cumulative_demand, distance);
+                if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= data.getMaxVehicleNumber()
+                    && cumulative_demand <= data.getCapacity()) {
                     if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
-                        new_route.IntraRoutesLocalSearch(this.graph.getData());
+                        new_route.IntraRoutesLocalSearch(data);
                         EndingNode.UpdateLabel(this.Solution, new_route);
                     }
                 }
-                boolean c = true;
-                if (this.Solution != null) 
+                if (this.Solution != null) {
+                    // The combined routes use the pre-local-search order of the new route
+                    // (the snapshot in `sequence`), not the post-LS order of `new_route`:
+                    // the original code built them from `sequence_as_array` taken before
+                    // IntraRoutesLocalSearch permuted the route, and the combined route is
+                    // a different route whose optimum is not the standalone route's optimum.
+                    final int new_len = size;
                     for (Route old_route : old_routes) {
                         final int combined_demand = old_route.getSumDemand() + cumulative_demand;
-                        if (combined_demand <= this.graph.getData().getCapacity()
-                            && this.Solution.getRoutesCount() <= this.graph.getData().getMaxVehicleNumber()) {
-                            int[] combined_sequence1 = new int[old_route.getLength() + length];
-                            for (int index = 0; index < combined_sequence1.length; index++) {
-                                if (index < old_route.getLength())
-                                    combined_sequence1[index] = old_route.getStop(index);
-                                else
-                                    combined_sequence1[index] = sequence_as_array[index - old_route.getLength()];
-                            }
-                            Route combined_route1 = new Route(this.graph.getData(), combined_sequence1);
+                        if (combined_demand <= data.getCapacity() && this.Solution.getRoutesCount() <= data.getMaxVehicleNumber()) {
+                            int[] combined_sequence1 = new int[old_route.getLength() + new_len];
+                            System.arraycopy(old_route.getSequence(), 0, combined_sequence1, 0, old_route.getLength());
+                            System.arraycopy(sequence, 0, combined_sequence1, old_route.getLength(), new_len);
+                            Route combined_route1 = new Route(data, combined_sequence1);
                             if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route1)) {
-                                combined_route1.IntraRoutesLocalSearch(this.graph.getData());
+                                combined_route1.IntraRoutesLocalSearch(data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route1);  
                             }
-                            int[] combined_sequence2 = new int[old_route.getLength() + length];
-                            for (int index = 0; index < combined_sequence2.length; index++) {
-                                if (index < sequence_as_array.length)
-                                    combined_sequence2[index] = sequence_as_array[index];
-                                else
-                                    combined_sequence2[index] = old_route.getStop(index - sequence_as_array.length);
-                            }
-                            Route combined_route2 = new Route(this.graph.getData(), combined_sequence2);
+                            int[] combined_sequence2 = new int[old_route.getLength() + new_len];
+                            System.arraycopy(sequence, 0, combined_sequence2, 0, new_len);
+                            System.arraycopy(old_route.getSequence(), 0, combined_sequence2, new_len, old_route.getLength());
+                            Route combined_route2 = new Route(data, combined_sequence2);
                             if (!EndingNode.UpdateLabel(this.Solution, old_route, combined_route2)) {
-                                combined_route2.IntraRoutesLocalSearch(this.graph.getData());
+                                combined_route2.IntraRoutesLocalSearch(data);
                                 EndingNode.UpdateLabel(this.Solution, old_route, combined_route2);
                             }
                         }
-                        if (combined_demand <= 2 * this.graph.getData().getCapacity()
-                            && this.Solution.getRoutesCount() + 1 <= this.graph.getData().getMaxVehicleNumber()) {
-                            c = false;
-                            LocalSearchMove lsm = old_route.getLSM(this.graph.getData(), new_route);
+                        if (combined_demand <= 2 * data.getCapacity() && this.Solution.getRoutesCount() + 1 <= data.getMaxVehicleNumber()) {
+                            LocalSearchMove lsm = old_route.getLSM(data, new_route);
                             if (lsm != null) {
-                                lsm.Perform(this.graph.getData());
-                                EndingNode.UpdateLabel(this.graph.getData(), this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
+                                lsm.Perform(data);
+                                EndingNode.UpdateLabel(data, this.Solution, old_route, lsm.getFirstRoute(), lsm.getSecondRoute());
                             }
                         }
                     }
-                if (c && cumulative_demand > this.graph.getData().getCapacity()) {
+                }
+                if (cumulative_demand > data.getCapacity()) {
                     this.NodeProcessingWith = this.graph.getLength();
                     this.graph.setNewSetters(EndingNode);
                     break;

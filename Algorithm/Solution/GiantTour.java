@@ -81,13 +81,11 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
         AuxiliaryGraph graph = new AuxiliaryGraph(data, bound, giant_tours);
         if (graph.isFeasible()) {
             this.AuxiliaryGraph = graph;
-            this.Sequence = this.AuxiliaryGraph.getNewSequence(data);
+            this.Sequence = graph.getNewSequence(data);
+            this.Split(data);
         }
-        else {
-            // an infeasible child still has to be a usable parent: keep a sequence
-            this.Sequence = giant_tours[0].Sequence.clone();
+        else 
             graph.close();
-        }
     }
     
     /**
@@ -128,7 +126,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                                                     .getParetoSet()
                                                     .stream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
-                                                    .filter(gt -> gt.Split(data, bound) && gt.getFitness() < bound)
+                                                    .filter(gt -> gt.Split(data, bound))
                                                     .collect(Collectors.toList());
             GiantTour best = feasibleTours.stream()
                                           .min(Comparator.comparingDouble(GiantTour::getFitness))

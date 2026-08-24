@@ -70,7 +70,7 @@ public class AuxiliaryGraph implements AutoCloseable {
         }
         this.phaser.arriveAndAwaitAdvance();
         if (this.isFeasible())
-            this.getLastNode().getParetoSet()
+            this.getLastNode().getSolutions()
                                 .stream()
                                 .forEach(s -> s.InterRoutesLocalSearch(data));
     }
@@ -96,7 +96,7 @@ public class AuxiliaryGraph implements AutoCloseable {
                     break;
                 }
             if (allMatch) 
-                for (Solution solution : node.getParetoSet())
+                for (Solution solution : node.getParetoSet()) 
                     if (solution.getTotalDistance() < this.Bound) 
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);

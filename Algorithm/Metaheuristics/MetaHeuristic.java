@@ -9,6 +9,7 @@ import Algorithm.Data.InputData;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -27,6 +28,10 @@ public abstract class MetaHeuristic {
     private GiantTour BestGiantTour = null;
     private final ReentrantLock BestLock = new ReentrantLock();
     public final long StagnationMinTime;
+    // How much longer than the elapsed time the search tolerates stagnation before
+    // it starts rolling to stop: higher means longer runs, no wall-clock cap. Spent
+    // one unit per survived roll, so a stagnating search tightens until it gives up.
+    private int Patience = 5;
 
     /** Incumbent trace: one {time_ms_since_StartTime, cost} pair per improvement. */
     public final List<long[]> Trace = Collections.synchronizedList(new ArrayList<>());
@@ -63,6 +68,32 @@ public abstract class MetaHeuristic {
         } finally {
             this.BestLock.unlock();
         }
+    }
+
+    /**
+     * Stagnation-based stopping rule: always continues while the last
+     * improvement is within {@link #StagnationMinTime}, then continues with a
+     * probability that decays as the stagnation stretch grows relative to the
+     * total elapsed time, tolerating {@code Patience} times that stretch. Being
+     * relative to the elapsed time, a run that keeps improving keeps extending
+     * itself instead of hitting a fixed budget. Every survived roll spends one
+     * unit of patience, which sharpens the next roll and bounds the tail: at zero
+     * the search stops without rolling, so the ratio is never divided by zero.
+     *
+     * @return {@code true} if the search should keep running
+     */
+    protected boolean nonStopCondition() {
+        long current_time = System.currentTimeMillis();
+        if (current_time - this.BestSolutionReachingTime <= this.StagnationMinTime)
+            return true;
+        if (this.Patience == 0)
+            return false;
+        double stagnationRatio = current_time - this.BestSolutionReachingTime - this.StagnationMinTime;
+        stagnationRatio /= (double) (current_time - this.StartTime) * this.Patience;
+        if (ThreadLocalRandom.current().nextDouble() < stagnationRatio)
+            return false;
+        this.Patience--;
+        return true;
     }
 
     /**

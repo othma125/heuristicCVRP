@@ -20,6 +20,11 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class Route implements Comparable<Route>, AutoCloseable {
 
+    // Shift variants to try per degree: a single-stop block is its own reverse,
+    // so degree 0 has one variant only.
+    private static final boolean[] REVERSED_ONLY = { true };
+    private static final boolean[] REVERSED_THEN_PLAIN = { true, false };
+
     private final InputData Data;
     private int[] Sequence;
     private int SumDemand;
@@ -105,42 +110,62 @@ public final class Route implements Comparable<Route>, AutoCloseable {
      * @return {@code true} if an improving move was found and applied
      */
     public boolean StagnationBreaker(InputData data) {
+        if (this.Sequence.length < 2)
+            return false;
 	int max = (int) Math.sqrt(this.Sequence.length);
+        // One move per neighbourhood, re-aimed at each candidate: the winner is
+        // remembered by its positions, since the instance itself moves on.
+        Swap swap = new Swap(data, 0, 1, this);
+        RightShift right_shift = new RightShift(data, true, 0, 0, 1, this);
+        LeftShift left_shift = new LeftShift(data, true, 0, 0, 1, this);
         for (int i = 0; i < this.Sequence.length - 1; i++) {
             LocalSearchMove best_lsm = null;
+            double best_gain = Double.POSITIVE_INFINITY;
+            int best_j = 0, best_degree = 0;
+            boolean best_2opt = false;
             for (int j = i + 1; j < this.Sequence.length; j++) {   
                 if (j > i + 1) {
-                    LocalSearchMove lsm = new Swap(data, i, j, this);
-                    lsm.setGain(data);
-                    if (best_lsm == null || lsm.getGain() < best_lsm.getGain())
-                        best_lsm = lsm;
+                    swap.reset(i, j);
+                    swap.setGain(data);
+                    if (swap.getGain() < best_gain) {
+                        best_lsm = swap;
+                        best_gain = swap.getGain();
+                        best_j = j;
+                    }
                 }
-                for (int degree = j == i + 1 ? 1 : 0; degree <= max && j + degree < this.Sequence.length; degree++) {
-                    LocalSearchMove lsm1 = new RightShift(data, true, degree, i, j, this);
-                    lsm1.setGain(data);
-                    if (best_lsm == null || lsm1.getGain() < best_lsm.getGain())
-                        best_lsm = lsm1;
-                    if (degree == 0)
-                        continue;
-                    LocalSearchMove lsm2 = new RightShift(data, false, degree, i, j, this);
-                    lsm2.setGain(data);
-                    if (best_lsm == null || lsm2.getGain() < best_lsm.getGain())
-                        best_lsm = lsm2;
-                }
-                for (int degree = j == i + 1 ? 1 : 0; degree <= max && i - degree >= 0; degree++) {
-                    LocalSearchMove lsm1 = new LeftShift(data, true, degree, i, j, this);
-                    lsm1.setGain(data);
-                    if (best_lsm == null || lsm1.getGain() < best_lsm.getGain())
-                        best_lsm = lsm1;
-                    if (degree == 0)
-                        continue;
-                    LocalSearchMove lsm2 = new LeftShift(data, false, degree, i, j, this);
-                    lsm2.setGain(data);
-                    if (best_lsm == null || lsm2.getGain() < best_lsm.getGain())
-                        best_lsm = lsm2;
-                }
+                for (int degree = j == i + 1 ? 1 : 0; degree <= max && j + degree < this.Sequence.length; degree++) 
+                    for (boolean with2opt : degree == 0 ? REVERSED_ONLY : REVERSED_THEN_PLAIN) {
+                        right_shift.reset(with2opt, degree, i, j);
+                        right_shift.setGain(data);
+                        if (right_shift.getGain() < best_gain) {
+                            best_lsm = right_shift;
+                            best_gain = right_shift.getGain();
+                            best_j = j;
+                            best_degree = degree;
+                            best_2opt = with2opt;
+                        }
+                    }
+                for (int degree = j == i + 1 ? 1 : 0; degree <= max && i - degree >= 0; degree++) 
+                    for (boolean with2opt : degree == 0 ? REVERSED_ONLY : REVERSED_THEN_PLAIN) {
+                        left_shift.reset(with2opt, degree, i, j);
+                        left_shift.setGain(data);
+                        if (left_shift.getGain() < best_gain) {
+                            best_lsm = left_shift;
+                            best_gain = left_shift.getGain();
+                            best_j = j;
+                            best_degree = degree;
+                            best_2opt = with2opt;
+                        }
+                    }
             }          
-            if (best_lsm != null && best_lsm.getGain() < 0d) {
+            if (best_lsm != null && best_gain < 0d) {
+                if (best_lsm == swap)
+                    swap.reset(i, best_j);
+                else if (best_lsm == right_shift)
+                    right_shift.reset(best_2opt, best_degree, i, best_j);
+                else
+                    left_shift.reset(best_2opt, best_degree, i, best_j);
+                best_lsm.setGain(data);
                 best_lsm.Perform(data);
                 return true;
             }
@@ -170,11 +195,16 @@ public final class Route implements Comparable<Route>, AutoCloseable {
      *                    recurse for another pass
      */
     public void IntraRoutesLocalSearch(InputData data, double probability) {
+        if (this.Sequence.length < 2)
+            return;
         int max = (int) Math.sqrt(this.Sequence.length);
         int improvementCounter = 0;
+        // One move re-aimed at every pair: an intra-route 2-opt keeps the route it
+        // was built against, so the instance stays valid across the whole scan.
+        LocalSearchMove lsm = new _2Opt(data, 0, 1, this);
         for (int i = 0; improvementCounter < max && i < this.Sequence.length - 1; i++)
             for (int j = i + 1; improvementCounter < max && j < this.Sequence.length ; j++) {
-                LocalSearchMove lsm = new _2Opt(data, i , j, this);
+                lsm.reset(i, j);
                 lsm.setGain(data);
                 if (lsm.getGain() < 0d) {
                     lsm.Perform(data);
@@ -196,70 +226,77 @@ public final class Route implements Comparable<Route>, AutoCloseable {
      * @return an improving feasible move, or {@code null} if none exists
      */
     public LocalSearchMove getLSM(InputData data, Route other) {
-        LocalSearchMove lsm;
+        // One move per neighbourhood, re-aimed at every candidate: the routes are
+        // fixed for the whole scan, only the positions change. The returned move is
+        // the one that stopped the scan, so it is never reset behind the caller.
+        _2Opt _2opt = new _2Opt(data, 0, 0, this, other);
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
-                lsm = new _2Opt(data, i , j, this, other);
-                lsm.setGain(data);
-                if (lsm.getGain() < 0d && lsm.isFeasible(data))
-                    return lsm;
+                _2opt.reset(i, j);
+                _2opt.setGain(data);
+                if (_2opt.getGain() < 0d && _2opt.isFeasible(data))
+                    return _2opt;
             }
+        _2Opt reversed_2opt = new _2Opt(data, 0, 0, other, this);
         for (int i = 0; i < other.Sequence.length; i++)
             for (int j = 0; j < this.Sequence.length ; j++) {
-                lsm = new _2Opt(data, i , j, other, this);
-                lsm.setGain(data);
-                if (lsm.getGain() < 0d && lsm.isFeasible(data))
-                    return lsm;
+                reversed_2opt.reset(i, j);
+                reversed_2opt.setGain(data);
+                if (reversed_2opt.getGain() < 0d && reversed_2opt.isFeasible(data))
+                    return reversed_2opt;
             }
+        Swap swap = new Swap(data, 0, 0, this, other);
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
-                lsm = new Swap(data, i, j, this, other);
-                if (lsm.isFeasible(data)) {
-                    lsm.setGain(data);
-                    if (lsm.getGain() < 0d)
-                        return lsm;
+                swap.reset(i, j);
+                if (swap.isFeasible(data)) {
+                    swap.setGain(data);
+                    if (swap.getGain() < 0d)
+                        return swap;
                 }
             }
         int max1 = (int) Math.sqrt(this.Sequence.length);
         int max2 = (int) Math.sqrt(other.Sequence.length);
+        RightShift right_shift = new RightShift(data, true, 0, 0, 0, this, other);
+        LeftShift left_shift = new LeftShift(data, true, 0, 0, 0, this, other);
         for (int i = 0; i < this.Sequence.length; i++)
             for (int j = 0; j < other.Sequence.length ; j++) {
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max2 && j + degree < other.Sequence.length; degree++) {
-                    lsm = new RightShift(data, true, degree, i, j, this, other);
-                    if (lsm.isFeasible(data)) {
-                        lsm.setGain(data);
-                        if (lsm.getGain() < 0d)
-                            return lsm;
+                    right_shift.reset(true, degree, i, j);
+                    if (right_shift.isFeasible(data)) {
+                        right_shift.setGain(data);
+                        if (right_shift.getGain() < 0d)
+                            return right_shift;
                     }
                     else if (other.getSumDemand() <= data.getCapacity())
                         break;
                     if (degree == 0)
                         continue;
-                    lsm = new RightShift(data, false, degree, i, j, this, other);
-                    if (lsm.isFeasible(data)) {
-                        lsm.setGain(data);
-                        if (lsm.getGain() < 0d)
-                            return lsm;
+                    right_shift.reset(false, degree, i, j);
+                    if (right_shift.isFeasible(data)) {
+                        right_shift.setGain(data);
+                        if (right_shift.getGain() < 0d)
+                            return right_shift;
                     }
                     else if (other.getSumDemand() <= data.getCapacity())
                         break;
                 }
                 for (int degree = j == i + 1 ? 1 : 0; degree <= max1 && i - degree >= 0; degree++) {
-                    lsm = new LeftShift(data, true, degree, i, j, this, other);
-                    if (lsm.isFeasible(data)) {
-                        lsm.setGain(data);
-                        if (lsm.getGain() < 0d)
-                            return lsm;
+                    left_shift.reset(true, degree, i, j);
+                    if (left_shift.isFeasible(data)) {
+                        left_shift.setGain(data);
+                        if (left_shift.getGain() < 0d)
+                            return left_shift;
                     }
                     else if (this.getSumDemand() <= data.getCapacity())
                         break;
                     if (degree == 0)
                         continue;
-                    lsm = new LeftShift(data, false, degree, i, j, this, other);
-                    if (lsm.isFeasible(data)) {
-                        lsm.setGain(data);
-                        if (lsm.getGain() < 0d)
-                            return lsm;
+                    left_shift.reset(false, degree, i, j);
+                    if (left_shift.isFeasible(data)) {
+                        left_shift.setGain(data);
+                        if (left_shift.getGain() < 0d)
+                            return left_shift;
                     }
                     else if (this.getSumDemand() <= data.getCapacity())
                         break;

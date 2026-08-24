@@ -16,8 +16,8 @@ import Algorithm.Solution.Route;
 public class LeftShift extends LocalSearchMove {
 
     private final int FirstBorder;
-    private final int Degree;
-    private final boolean with2Opt;
+    private int Degree;
+    private boolean with2Opt;
 
     /**
      * @param data     the problem instance
@@ -33,6 +33,20 @@ public class LeftShift extends LocalSearchMove {
         this.with2Opt = with2opt;
         this.Degree = degree;
         this.FirstBorder = this.FirstRoute.getLength();
+    }
+
+    /**
+     * Re-aims this move at another candidate on the same route(s).
+     *
+     * @param with2opt whether the relocated block is reversed
+     * @param degree   number of extra stops moved with the anchor
+     * @param i        anchor position in the first route
+     * @param j        insertion position in the second route
+     */
+    public void reset(boolean with2opt, int degree, int i, int j) {
+        this.reset(i, j);
+        this.with2Opt = with2opt;
+        this.Degree = degree;
     }
 
     /** {@inheritDoc} */
