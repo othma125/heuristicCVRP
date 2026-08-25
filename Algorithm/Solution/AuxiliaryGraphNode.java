@@ -51,6 +51,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         try {
             int leftover_load = old_solution != null ? Math.max(old_solution.getLeftoverLoad(), new_route.getLeftover()) : new_route.getLeftover();
             double label = (old_solution == null ? 0d : old_solution.getTotalDistance()) + new_route.getTraveledDistance();
+            // if (!this.isFeasible() || label < this.getLabel()) {
             if (label < this.getLabel() || leftover_load < this.getLeftoverLoad()) {
                 c = this.isFeasible();
                 int routes_count = old_solution != null ? old_solution.getRoutesCount() + 1 : 1;
@@ -90,6 +91,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         try {
             int leftover = old_solution.getLeftoverLoadWithout(old_route);
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + new_route.getTraveledDistance();
+            // if (!this.isFeasible() || label < this.getLabel()) {
             if (label < this.getLabel() || Math.max(leftover, new_route.getLeftover()) < this.getLeftoverLoad()) {
                 c = this.isFeasible();
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount());
@@ -131,6 +133,7 @@ public class AuxiliaryGraphNode implements AutoCloseable {
         try {
             int leftover = old_solution.getLeftoverLoadWithout(old_route);
             double label = old_solution.getTotalDistance() - old_route.getTraveledDistance() + route1.getTraveledDistance() + route2.getTraveledDistance();
+            // if (!this.isFeasible() || label < this.getLabel()) {
             if (label < this.getLabel() || Math.max(leftover, Math.max(route1.getLeftover(), route2.getLeftover())) < this.getLeftoverLoad()) {
                 c = this.isFeasible();
                 Solution newSolution = new Solution(label, old_solution.getRoutesCount() + 1);

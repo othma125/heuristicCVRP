@@ -123,7 +123,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
         }
         else {
             var feasibleTours = this.AuxiliaryGraph.getLastNode()
-                                                    .getParetoSet()
+                                                    .getSolutions()
                                                     .stream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
                                                     .filter(gt -> gt.Split(data, bound))
@@ -146,10 +146,18 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
     }
 
     /**
-     * Initialises the sequence from routes packed by randomized Best-Fit
+     * Initialises the sequence from routes packed by randomized First-Fit
      * Decreasing: customers are taken in decreasing demand order (equal demands
-     * in random order) and each is placed in one of the two fullest routes that
-     * still fit it, systematically minimising the empty capacity per route. The
+     * in random order) and each is placed in a uniformly random route among those
+     * that still fit it. Biasing that pick towards the fullest routes packs
+     * tighter per draw but collapses the set of partitions the seeding can reach:
+     * on the zero-slack XSH instances (total demand == vehicles * capacity, so
+     * every route must be exactly full) picking among the two fullest reached only
+     * 360 of the 2940 feasible partitions of XSH-n20-k4-51 in 200k draws, never
+     * the optimal one, while the uniform pick reaches 2428 for 1.7 points of
+     * packing success. Inter-route local search cannot repair that: at zero slack
+     * relocation never fits and swaps need exactly equal demands, so the seeding
+     * is what decides which partitions the crossover ever gets to recombine. The
      * routes are then concatenated in random order, each shuffled internally, so
      * the packing does not leak demand order into the sequence: the split only
      * needs each route's customers to be contiguous, and keeping the order random
@@ -184,19 +192,11 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
         int[] loads = new int[vehicles];
         for (int c : customers) {
             int demand = data.getDemand(c);
-            // best fit: the two fullest routes the customer fits in, picked at random
-            int r1 = -1, r2 = -1;
+            // uniformly random route among those the customer fits in (reservoir sample)
+            int r1 = -1, fits = 0;
             for (int r = 0; r < vehicles; r++)
-                if (loads[r] + demand <= data.getCapacity()) {
-                    if (r1 < 0 || loads[r] > loads[r1]) {
-                        r2 = r1;
-                        r1 = r;
-                    }
-                    else if (r2 < 0 || loads[r] > loads[r2]) 
-                        r2 = r;
-                }
-            if (r2 >= 0 && rnd.nextBoolean())
-                r1 = r2;
+                if (loads[r] + demand <= data.getCapacity() && rnd.nextInt(++fits) == 0)
+                    r1 = r;
             if (r1 < 0) {
                 // nothing fits: overload the emptiest route, Split repairs
                 r1 = 0;

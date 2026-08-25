@@ -24,9 +24,9 @@ public class main {
      */
     public static void main(String[] args) throws IOException {
         
-        // try (InputData data = new InputData("Algorithm/CVRPLib/QOBLIB/XSH-n20-k4-51.vrp")) {
+        try (InputData data = new InputData("Algorithm/CVRPLib/QOBLIB/XSH-n20-k4-51.vrp")) {
         // try (InputData data = new InputData("Algorithm/CVRPLib/B/B-n57-k7.vrp")) {
-        try (InputData data = new InputData("Algorithm/CVRPLib/XL/XL-n1048-k237.vrp")) {
+        // try (InputData data = new InputData("Algorithm/CVRPLib/XL/XL-n1048-k237.vrp")) {
             GeneticAlgorithm algorithm = new GeneticAlgorithm(data);
             algorithm.Run();
             

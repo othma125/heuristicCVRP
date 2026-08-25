@@ -78,7 +78,7 @@ public class ArcSetter extends RecursiveAction {
                 length++;
                 AuxiliaryGraphNode EndingNode = this.graph.getNode(++i);
                 // if (this.Solution != null 
-                //     && (this.Solution.getTotalDistance() >= EndingNode.getLabel() || this.Solution.getLeftoverLoad() >= EndingNode.getLeftoverLoad())) {
+                //     && (this.Solution.getTotalDistance() >= EndingNode.getLabel() && this.Solution.getLeftoverLoad() >= EndingNode.getLeftoverLoad())) {
                 //     this.NodeProcessingWith++;
                 //     this.graph.setNewSetters(EndingNode);
                 //     continue;
@@ -87,8 +87,7 @@ public class ArcSetter extends RecursiveAction {
                     int stop = this.GiantTour.getStop(j++ % this.graph.getLength());
                     if (this.Solution == null || !this.Solution.contains(stop)) {
                         cumulative_demand += data.getDemand(stop);
-                        cumulative_distance += size == 0 ? data.getDepotToStopDistance(stop)
-                                                        : data.getTwoStopsDistance(sequence[size - 1], stop);
+                        cumulative_distance += size == 0 ? data.getDepotToStopDistance(stop) : data.getTwoStopsDistance(sequence[size - 1], stop);
                         if (size == sequence.length)
                             sequence = Arrays.copyOf(sequence, 2 * size);
                         sequence[size++] = stop;
@@ -97,8 +96,7 @@ public class ArcSetter extends RecursiveAction {
                 double distance = cumulative_distance + data.getStopToDepotDistance(sequence[size - 1]);
                 // The route owns its sequence and permutes it in place, so it gets a copy.
                 Route new_route = new Route(data, Arrays.copyOf(sequence, size), cumulative_demand, distance);
-                if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= data.getMaxVehicleNumber()
-                    && cumulative_demand <= data.getCapacity()) {
+                if ((this.Solution == null ? 0 : this.Solution.getRoutesCount()) + 1 <= data.getMaxVehicleNumber() && cumulative_demand <= data.getCapacity()) {
                     if (!EndingNode.UpdateLabel(this.Solution, new_route)) {
                         new_route.IntraRoutesLocalSearch(data);
                         EndingNode.UpdateLabel(this.Solution, new_route);

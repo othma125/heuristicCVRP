@@ -106,11 +106,21 @@ Implemented in `Algorithm/Metaheuristics/GeneticAlgorithm.java`.
 ### Population
 - Initialized using randomized giant tours
 - On instances with a vehicle limit (`-kN`), the tours are built by randomized
-  Best-Fit Decreasing bin packing into that many routes, then emitted in random
-  route order with each route shuffled. This makes a feasible split far more
-  likely on tight instances. Instances with no vehicle limit stay purely random,
-  since feasibility is never the bottleneck there and plain random tours converge
-  to better optima.
+  First-Fit Decreasing bin packing into that many routes — customers in decreasing
+  demand order, each dropped into a **uniformly random** route among those it still
+  fits in — then emitted in random route order with each route shuffled. This makes
+  a feasible split far more likely on tight instances. Instances with no vehicle
+  limit stay purely random, since feasibility is never the bottleneck there and
+  plain random tours converge to better optima.
+- The route pick is deliberately unbiased. Preferring the fullest routes packs
+  tighter per draw, but it narrows the set of *partitions* the seeding can produce,
+  and on zero-slack instances that set is all the search ever gets: when total
+  demand equals `vehicles * capacity` every route must be exactly full, which makes
+  inter-route relocation infeasible by construction and restricts swaps to pairs of
+  exactly equal demand. On `XSH-n20-k4-51` (2940 feasible partitions, unique optimum
+  at 491) preferring the two fullest routes reached only 360 partitions in 200k
+  draws and never the optimal one; the uniform pick reaches 2428, at a cost of 1.7
+  points of packing success (12.8% → 11.1%) and none on the slacker instances.
 - Each individual is decoded using the auxiliary graph
 - The first individual probes feasibility (up to 100 attempts, otherwise the run
   aborts); once it succeeds the remaining individuals are generated concurrently,

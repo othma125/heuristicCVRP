@@ -86,10 +86,10 @@ public abstract class MetaHeuristic {
         long current_time = System.currentTimeMillis();
         if (current_time - this.BestSolutionReachingTime <= this.StagnationMinTime)
             return true;
-        if (this.Patience == 0)
-            return false;
         double stagnationRatio = current_time - this.BestSolutionReachingTime - this.StagnationMinTime;
-        stagnationRatio /= (double) (current_time - this.StartTime) * this.Patience;
+        stagnationRatio /= (double) (current_time - this.StartTime);
+        if (this.Patience > 0) 
+            stagnationRatio /= (double) this.Patience;
         if (ThreadLocalRandom.current().nextDouble() < stagnationRatio)
             return false;
         this.Patience--;
