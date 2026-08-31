@@ -180,10 +180,11 @@ public class AuxiliaryGraphNode implements AutoCloseable {
      *
      * @return the Pareto-optimal solutions, sorted by ascending distance
      */
-    List<Solution> getParetoSet() {
+    List<Solution> getParetoSet(boolean needFeasibility) {
         List<Solution> pareto = new LinkedList<>();
         this.Lock.lock();
         try {
+            // if (needFeasibility) {
             this.Solutions.sort(Comparator.comparingInt(Solution::getLeftoverLoad).thenComparingDouble(Solution::getTotalDistance));
             double best_distance = Double.POSITIVE_INFINITY;
             for (Solution solution : this.Solutions)
@@ -193,6 +194,18 @@ public class AuxiliaryGraphNode implements AutoCloseable {
                 }
                 else
                     break;
+            // }
+            // else {
+            //     this.Solutions.sort(Comparator.comparingDouble(Solution::getTotalDistance).thenComparingInt(Solution::getLeftoverLoad));
+            //     int best_leftover = Integer.MAX_VALUE;
+            //     for (Solution solution : this.Solutions)
+            //         if (solution.getLeftoverLoad() < best_leftover) {
+            //             pareto.addFirst(solution);
+            //             best_leftover = solution.getLeftoverLoad();
+            //         }
+            //         else
+            //             break;
+            // }
         } finally {
             this.Lock.unlock();
         }

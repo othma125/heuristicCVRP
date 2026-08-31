@@ -15,12 +15,6 @@ import Algorithm.Solution.Route;
  * neighbourhoods: {@link _2Opt}, {@link Swap}, {@link LeftShift},
  * {@link RightShift}.
  *
- * <p>The route(s) a move works on are fixed at construction while its positions
- * are not, so a neighbourhood scan builds one move and re-aims it with
- * {@link #reset(int, int)} at every candidate instead of allocating one move per
- * candidate. A move must not be reset once it has been performed: performing it
- * replaces the routes it was built against.
- *
  * @author Othmane EL YAAKOUBI
  */
 public abstract class LocalSearchMove {
@@ -76,22 +70,6 @@ public abstract class LocalSearchMove {
         this.FirstRoute = routes[0];
         this.SecondRoute = this.OneSequence ? this.FirstRoute : routes[1];
         this.Border = this.OneSequence ? this.FirstRoute.getLength() : this.SecondRoute.getLength();
-    }
-
-    /**
-     * Re-aims this move at another pair of positions on the same route(s) and
-     * clears the gain, so the instance can be evaluated again.
-     *
-     * @param i the first position
-     * @param j the second position
-     * @throws IllegalArgumentException if an intra-route move has {@code i >= j}
-     */
-    public void reset(int i, int j) {
-        if (this.OneSequence && i >= j)
-            throw new IllegalArgumentException("i should be smaller than j in LSM");
-        this.Gain = 0d;
-        this.I = i;
-        this.J = j;
     }
 
     /**

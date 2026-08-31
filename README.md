@@ -90,8 +90,9 @@ lets the split place the remaining customers on tight, vehicle-limited instances
 first feasible solution is reached markedly faster than with a single shortest-path label.
 Labels are relaxed unconditionally; the pruning tests are kept in the source, commented
 out, since discarding labels early was what made feasibility hard to reach. A re-split
-keeps its new graph only when it beats the bound it was given, so re-splitting a tour
-either improves it or leaves it untouched.
+re-splits the sink's Pareto set rather than every label reaching it, and keeps its new graph
+only when it beats the bound it was given, so re-splitting a tour either improves it or
+leaves it untouched.
 
 This guarantees:
 - Capacity feasibility
@@ -157,17 +158,14 @@ Moves implemented:
 - Right Shift
 
 Local search is executed **inside the auxiliary graph context**, allowing high-quality
-improvements without breaking feasibility. Every candidate route is optimised as it is
-relaxed into a node, and the inter-route search chains up to `max(10, sqrt(routes))` moves
-per call. Route order is randomised wherever the first improving move wins — both when the
-inter-route search scans route pairs and when a label's existing routes are tried against a
-new one — so the same routes are not always improved first.
-
-Move instances are reused within a neighbourhood scan: each search builds one move per
-neighbourhood and re-aims it at every candidate with `reset(i, j)` instead of allocating
-one move object per candidate. The routes a move works on are fixed for the whole scan, so
-only the positions change. This cuts the allocation of the local-search hot path by ~95%
-(82 → 4.7 MB for 200 `getLSM` scans on X-n157-k13, 548 → 7.2 MB for `StagnationBreaker`).
+improvements without breaking feasibility. The inter-route pass first optimises each of the
+solution's routes internally and recomputes the total from them, then chains up to
+`max(10, sqrt(routes))` inter-route moves per call. A route is optimised internally at most
+once over its lifetime: labels share their `Route` objects, so the intra-route pass is a
+one-shot flag on the route rather than work repeated for every label holding it. Route order
+is randomised wherever the first improving move wins — both when the inter-route search scans
+route pairs and when a label's existing routes are tried against a new one — so the same
+routes are not always improved first.
 
 The split walk accumulates its candidate route in a growing `int[]` buffer instead of a
 boxed `LinkedList<Integer>`, and combined routes are assembled with `System.arraycopy`

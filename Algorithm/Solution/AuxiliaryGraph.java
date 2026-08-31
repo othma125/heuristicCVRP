@@ -72,7 +72,7 @@ public class AuxiliaryGraph implements AutoCloseable {
         if (this.isFeasible())
             this.getLastNode().getSolutions()
                                 .stream()
-                                .forEach(s -> s.InterRoutesLocalSearch(data));
+                                .forEach(s -> s.InterRoutesLocalSearch(this.Data));
     }
 
     /**
@@ -83,9 +83,11 @@ public class AuxiliaryGraph implements AutoCloseable {
      * @param node the node whose outgoing arcs should be scheduled
      */
     void setNewSetters(AuxiliaryGraphNode node) {
+        if (this.Data.isStopRequested())
+            return;
         // A stopped run spawns no further arcs: the setters still in flight drain, the
         // phaser advances, and the constructor returns instead of exploring the graph.
-        if (node.NodeIndex == this.Length || this.Data.isStopRequested())
+        if (!node.isFeasible() || node.NodeIndex == this.Length)
             return;
         node.Lock.lock();
         try {
@@ -95,8 +97,8 @@ public class AuxiliaryGraph implements AutoCloseable {
                     allMatch = false;
                     break;
                 }
-            if (allMatch) 
-                for (Solution solution : node.getParetoSet()) 
+            if (allMatch) {
+                for (Solution solution : node.getParetoSet(true)) 
                     if (solution.getTotalDistance() < this.Bound) 
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
@@ -104,6 +106,7 @@ public class AuxiliaryGraph implements AutoCloseable {
                             this.phaser.register();
                             ForkJoinPool.commonPool().execute(setter);
                         }
+            }
         } finally {
             node.Lock.unlock();
         }

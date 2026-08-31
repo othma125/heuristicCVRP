@@ -15,8 +15,8 @@ import Algorithm.Solution.Route;
  */
 public class RightShift extends LocalSearchMove {
 
-    private int Degree;
-    private boolean with2Opt;
+    private final int Degree;
+    private final boolean with2Opt;
     private final int FirstBorder;
 
     /**
@@ -33,20 +33,6 @@ public class RightShift extends LocalSearchMove {
         this.with2Opt = with2opt;
         this.Degree = degree;
         this.FirstBorder = this.FirstRoute.getLength();
-    }
-
-    /**
-     * Re-aims this move at another candidate on the same route(s).
-     *
-     * @param with2opt whether the relocated block is reversed
-     * @param degree   number of extra stops moved with the anchor
-     * @param i        insertion position in the first route
-     * @param j        anchor position in the second route
-     */
-    public void reset(boolean with2opt, int degree, int i, int j) {
-        this.reset(i, j);
-        this.with2Opt = with2opt;
-        this.Degree = degree;
     }
 
     /** {@inheritDoc} */

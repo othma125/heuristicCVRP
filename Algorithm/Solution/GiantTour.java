@@ -123,7 +123,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
         }
         else {
             var feasibleTours = this.AuxiliaryGraph.getLastNode()
-                                                    .getSolutions()
+                                                    .getParetoSet(true)
                                                     .stream()
                                                     .map(solution -> new GiantTour(solution.getNewSequence()))
                                                     .filter(gt -> gt.Split(data, bound))
