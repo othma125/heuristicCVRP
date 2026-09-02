@@ -2,12 +2,12 @@
 
 package Algorithm.Solution;
 
-import Algorithm.Data.InputData;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import Algorithm.Data.InputData;
 
 /**
  * A node of the {@link AuxiliaryGraph}, representing a position in the giant

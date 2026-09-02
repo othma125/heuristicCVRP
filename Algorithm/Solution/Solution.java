@@ -2,15 +2,16 @@
 
 package Algorithm.Solution;
 
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+
 import Algorithm.Data.InputData;
 import Algorithm.Solution.LSM.LocalSearchMove;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A complete CVRP solution: a set of vehicle {@link Route}s together with the

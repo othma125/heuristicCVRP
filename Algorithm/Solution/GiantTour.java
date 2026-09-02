@@ -2,7 +2,6 @@
 
 package Algorithm.Solution;
 
-import Algorithm.Data.InputData;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -17,8 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.IntStream;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import Algorithm.Data.InputData;
 
 /**
  * The chromosome of the genetic algorithm: a permutation of all customers with

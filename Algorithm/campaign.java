@@ -1,9 +1,5 @@
-// Author: Othmane
-
-import Algorithm.Data.InputData;
-import Algorithm.Metaheuristics.GeneticAlgorithm;
-import Algorithm.Metaheuristics.MetaHeuristic;
-import Algorithm.Solution.GiantTour;
+package Algorithm;
+// author: Othmane
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +10,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import Algorithm.Data.InputData;
+import Algorithm.Metaheuristics.GeneticAlgorithm;
+import Algorithm.Metaheuristics.MetaHeuristic;
+import Algorithm.Solution.GiantTour;
 
 /**
  * Loop-until-feasible benchmark campaign with incumbent-trace recording.

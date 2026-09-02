@@ -2,17 +2,15 @@
 
 package Algorithm.Solution;
 
-import Algorithm.Data.InputData;
-import Algorithm.Solution.LSM.LocalSearchMove;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.RecursiveAction;
+
+import Algorithm.Data.InputData;
 
 /**
  * The route-first/cluster-second split structure. Given one or more giant
@@ -69,6 +67,7 @@ public class AuxiliaryGraph implements AutoCloseable {
             ForkJoinPool.commonPool().execute(setter);
         }
         this.phaser.arriveAndAwaitAdvance();
+        // assert this.ArcsSetters.isEmpty() : "setters set not empty" + this.ArcsSetters.size();
         if (this.isFeasible())
             this.getLastNode().getSolutions()
                                 .stream()
@@ -93,11 +92,14 @@ public class AuxiliaryGraph implements AutoCloseable {
         try {
             boolean allMatch = true;
             for (ArcSetter setter : this.ArcsSetters) 
-                if (setter.StartingNode.NodeIndex == node.NodeIndex || setter.NodeProcessingWith < node.NodeIndex) {
+                if (setter.StartingNode == node || setter.NodeProcessingWith < node.NodeIndex) {
                     allMatch = false;
                     break;
                 }
             if (allMatch) {
+                this.getLastNode().getSolutions()
+                                    .stream()
+                                    .forEach(s -> s.InterRoutesLocalSearch(this.Data));
                 for (Solution solution : node.getParetoSet(true)) 
                     if (solution.getTotalDistance() < this.Bound) 
                         for (GiantTour gt : this.GiantTours) {

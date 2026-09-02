@@ -1,0 +1,32 @@
+[
+ [
+  {"Time": 0.004, "Incumbent": 557, "step": 1},
+  {"Time": 0.006, "Incumbent": 545, "step": 2},
+  {"Time": 0.063, "Incumbent": 540, "step": 3},
+  {"Time": 0.234, "Incumbent": 538, "step": 4},
+  {"Time": 0.655, "Incumbent": 526, "step": 5},
+  {"Time": 0.656, "Incumbent": 524, "step": 6}
+ ],
+ [
+  {"Time": 0.072, "Incumbent": 553, "step": 1},
+  {"Time": 0.139, "Incumbent": 532, "step": 2},
+  {"Time": 0.298, "Incumbent": 528, "step": 3}
+ ],
+ [
+  {"Time": 0.046, "Incumbent": 520, "step": 1}
+ ],
+ [
+  {"Time": 0.010, "Incumbent": 537, "step": 1},
+  {"Time": 0.099, "Incumbent": 528, "step": 2},
+  {"Time": 0.143, "Incumbent": 509, "step": 3},
+  {"Time": 0.144, "Incumbent": 508, "step": 4}
+ ],
+ [
+  {"Time": 0.017, "Incumbent": 559, "step": 1},
+  {"Time": 0.035, "Incumbent": 558, "step": 2},
+  {"Time": 0.078, "Incumbent": 543, "step": 3},
+  {"Time": 0.080, "Incumbent": 533, "step": 4},
+  {"Time": 0.209, "Incumbent": 528, "step": 5},
+  {"Time": 0.435, "Incumbent": 527, "step": 6}
+ ]
+]

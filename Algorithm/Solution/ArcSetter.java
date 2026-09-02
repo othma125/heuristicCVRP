@@ -2,15 +2,12 @@
 
 package Algorithm.Solution;
 
-import Algorithm.Data.InputData;
-import Algorithm.Solution.LSM.LocalSearchMove;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.ThreadLocalRandom;
+
+import Algorithm.Data.InputData;
+import Algorithm.Solution.LSM.LocalSearchMove;
 
 /**
  * A parallel task that, starting from one node and one partial solution,
@@ -62,16 +59,6 @@ public class ArcSetter extends RecursiveAction {
             // an array access instead of a linked list traversal.
             int[] sequence = new int[16];
             int size = 0;
-            // random route order: the first improving combination wins, so a fixed order
-            // would always favour the same routes. The solution is not mutated during the
-            // walk, so one shuffle up front serves every node.
-            final List<Route> old_routes;
-            if (this.Solution != null) {
-                old_routes = new ArrayList<>(this.Solution.getRoutes());
-                Collections.shuffle(old_routes, ThreadLocalRandom.current());
-            }
-            else
-                old_routes = null;
             // Setters already queued in the pool when the stop arrived would otherwise each
             // walk the whole tour running local search, so the walk checks the flag too.
             while (i < this.graph.getLength() && !data.isStopRequested()) {
@@ -110,7 +97,7 @@ public class ArcSetter extends RecursiveAction {
                     final int new_len = size;
                     final int new_first = sequence[0];
                     final int new_last = sequence[new_len - 1];
-                    for (Route old_route : old_routes) {
+                    for (Route old_route : this.Solution.getRoutes()) {
                         final int combined_demand = old_route.getSumDemand() + cumulative_demand;
                         if (combined_demand <= data.getCapacity() && this.Solution.getRoutesCount() <= data.getMaxVehicleNumber()) {
                             int[] combined_sequence1 = new int[old_route.getLength() + new_len];
