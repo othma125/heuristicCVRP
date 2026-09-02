@@ -99,22 +99,6 @@ public class GeneticAlgorithm extends MetaHeuristic {
     }
 
     /**
-     * Waits for a task submitted to {@link #CrossoverPool} and unwraps its
-     * result, rethrowing any failure as unchecked.
-     *
-     * @param <T>    the task result type
-     * @param future the submitted task
-     * @return the task result
-     */
-    private static <T> T await(Future<T> future) {
-        try {
-            return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Selects two parents by tournament and recombines them: a graph crossover
      * at the crossover rate, a crossover with a fresh random tour when the same
      * parent is drawn twice, otherwise a re-split of both parents. Runs on
@@ -181,7 +165,8 @@ public class GeneticAlgorithm extends MetaHeuristic {
                     // task is queued for runCrossovers to join. Partners are captured now,
                     // before the slot is overwritten below.
                     GiantTour mate = this.Population[randomIndex];
-                    this.PendingCrossovers.add(CrossoverPool.submit(() -> this.UpdatePopulation(new GiantTour(this.Data, newGiantTour, mate))));
+                    GiantTour best = this.Population[0];
+                    this.PendingCrossovers.add(CrossoverPool.submit(() -> this.UpdatePopulation(new GiantTour(this.Data, newGiantTour, best, mate))));
                 }
                 this.Population[randomIndex] = newGiantTour;
                 Arrays.sort(this.Population);
@@ -248,5 +233,21 @@ public class GeneticAlgorithm extends MetaHeuristic {
      */
     private GiantTour getLast() {
         return this.Population[this.PopulationSize - 1];
+    }
+
+    /**
+     * Waits for a task submitted to {@link #CrossoverPool} and unwraps its
+     * result, rethrowing any failure as unchecked.
+     *
+     * @param <T>    the task result type
+     * @param future the submitted task
+     * @return the task result
+     */
+    private static <T> T await(Future<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

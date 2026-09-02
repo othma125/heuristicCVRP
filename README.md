@@ -189,8 +189,11 @@ standalone route's optimum.
     share their `Route` objects and the moves rewrite sequences in place, so both the
     final local-search pass and the re-split of the Pareto labels are sequential
   - Crossovers, including the nested one spawned when an offspring becomes the new
-    incumbent: it cannot be awaited where it is created, since that thread holds the
-    population lock, so its future is queued and joined at the end of the generation
+    incumbent: it recombines the new incumbent with the current best and a random
+    mate (a 3-parent graph crossover) to pull the offspring toward the elite without
+    losing the mate's structure. It cannot be awaited where it is created, since that
+    thread holds the population lock, so its future is queued and joined at the end
+    of the generation
 
 Everything above runs on the common pool through parallel streams, except crossovers,
 which use the dedicated 2-thread pool in `Algorithm/Metaheuristics/GeneticAlgorithm.java`

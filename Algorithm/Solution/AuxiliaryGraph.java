@@ -99,7 +99,6 @@ public class AuxiliaryGraph implements AutoCloseable {
             if (allMatch) 
                 for (Solution solution : node.getParetoSet()) 
                     if (solution.getTotalDistance() < this.Bound) {
-                        solution.InterRoutesLocalSearch(this.Data);
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
                             this.ArcsSetters.add(setter);

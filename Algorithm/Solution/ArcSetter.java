@@ -160,7 +160,7 @@ public class ArcSetter extends RecursiveAction {
         ArcSetter other = (ArcSetter) obj;
         if (this.StartingNode.NodeIndex != other.StartingNode.NodeIndex)
             return false;
-        if (this.graph.getGiantTours().length > 1 && this.GiantTour.getStop(this.StartingNode.NodeIndex) != other.GiantTour.getStop(other.StartingNode.NodeIndex))
+        if (this.graph.getGiantTours().length > 1 && this.GiantTour != other.GiantTour)
             return false;
         return this.Solution == null ? other.Solution == null : this.Solution.getTotalDistance() == other.Solution.getTotalDistance() && this.Solution.getRoutesCount() == other.Solution.getRoutesCount();
     }
