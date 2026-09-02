@@ -96,25 +96,22 @@ public class AuxiliaryGraph implements AutoCloseable {
                     allMatch = false;
                     break;
                 }
-            if (allMatch) {
-                this.getLastNode().getSolutions()
-                                    .stream()
-                                    .forEach(s -> s.InterRoutesLocalSearch(this.Data));
-                for (Solution solution : node.getParetoSet(true)) 
-                    if (solution.getTotalDistance() < this.Bound) 
+            if (allMatch) 
+                for (Solution solution : node.getParetoSet()) 
+                    if (solution.getTotalDistance() < this.Bound) {
+                        solution.InterRoutesLocalSearch(this.Data);
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
                             this.ArcsSetters.add(setter);
                             this.phaser.register();
                             ForkJoinPool.commonPool().execute(setter);
                         }
-            }
+                    }
         } finally {
             node.Lock.unlock();
         }
     }
     
-
     /**
      * @return the sink node (end of the tour)
      */
