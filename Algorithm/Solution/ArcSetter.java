@@ -143,11 +143,12 @@ public class ArcSetter extends RecursiveAction {
         }
     }
 
+    // The giant tour is compared by reference in equals, so it is hashed by identity to match.
     @Override
     public int hashCode() {
         int hash = this.StartingNode.NodeIndex;
         if (this.graph.getGiantTours().length > 1)
-            hash = 31 * hash + this.GiantTour.getStop(this.StartingNode.NodeIndex);
+            hash = 31 * hash + System.identityHashCode(this.GiantTour);
         return this.Solution != null ? 31 * hash + Double.hashCode(this.Solution.getTotalDistance()) : hash;
     }
 
