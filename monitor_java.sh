@@ -66,7 +66,7 @@ EXAMPLES:
     $SCRIPT_NAME -j -o stats.json    # JSON output to file
 
 KEYS (terminal mode):
-    k       Kill -9 a monitored Java process (prompts for the PID)
+    k       Kill -9 a monitored Java process (prompts for the PID, or "all")
     q       Quit
 
 EOF
@@ -648,12 +648,21 @@ cleanup_and_exit() {
 # are accepted, so a typo can't kill an unrelated process.
 kill_prompt() {
     local pid
-    printf '\033[?25h\n%bPID to kill -9 (Enter to cancel): %b' "$YELLOW" "$NC"
+    printf '\033[?25h\n%bPID to kill -9 ("all" for every listed PID, Enter to cancel): %b' "$YELLOW" "$NC"
     read -r pid
     printf '\033[?25l'
     [ -z "$pid" ] && return 0
 
-    if [[ " $(get_java_pids) " != *" $pid "* ]]; then
+    if [ "$pid" = "all" ]; then
+        local pids
+        pids=$(get_java_pids)
+        if [ -z "$pids" ]; then
+            printf '%bNo monitored Java processes%b\n' "$RED" "$NC"
+        else
+            kill -9 $pids 2>/dev/null
+            printf '%bSent SIGKILL to %s%b\n' "$GREEN" "$(echo $pids | tr '\n' ' ')" "$NC"
+        fi
+    elif [[ " $(get_java_pids) " != *" $pid "* ]]; then
         printf '%bNot a monitored Java PID: %s%b\n' "$RED" "$pid" "$NC"
     elif kill -9 "$pid" 2>/dev/null; then
         printf '%bSent SIGKILL to %s%b\n' "$GREEN" "$pid" "$NC"
@@ -788,7 +797,7 @@ main() {
                 echo -e "${GREEN}Java Monitor${NC} | $(date '+%H:%M:%S') | every ${REFRESH_INTERVAL}s | $(hostname) | ${TOTAL_CORES} cores, ${TOTAL_MEM_GB} GB${FILTER_PATTERN:+ | pattern='$FILTER_PATTERN'}${FILTER_USER:+ | user='$FILTER_USER'}"
                 get_system_stats
                 get_java_stats
-                echo -e "${YELLOW}[k] kill -9 a process  [q] quit${NC}"
+                echo -e "${YELLOW}[k] kill -9 a process (or all)  [q] quit${NC}"
             )
             # Truncate to the window so a long table can never push the frame
             # off the top and start scrolling.
