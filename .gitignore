@@ -1,6 +1,9 @@
 # Solver output
 Output/
 
+# Campaign output
+campaign_out_*/
+
 # Benchmark reports
 *.csv
 
@@ -10,6 +13,3 @@ out/
 
 # Local environment (use .env.example as template)
 .env
-
-# Local AI assistant notes
-CLAUDE.md

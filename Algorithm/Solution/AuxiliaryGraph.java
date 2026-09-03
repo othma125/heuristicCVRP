@@ -97,7 +97,7 @@ public class AuxiliaryGraph implements AutoCloseable {
                     break;
                 }
             if (allMatch) 
-                for (Solution solution : node.getParetoSet()) 
+                for (Solution solution : Double.isInfinite(this.Bound) ? node.getParetoSet() : node.getSolutions())
                     if (solution.getTotalDistance() < this.Bound) {
                         for (GiantTour gt : this.GiantTours) {
                             ArcSetter setter = new ArcSetter(this, node, solution, gt);
