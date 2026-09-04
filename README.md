@@ -31,7 +31,7 @@ Reference: CVRPLIB – http://vrp.atd-lab.inf.puc-rio.br/index.php/en/
 ```
 HEURISTICCVRP
 ├── Algorithm/            # Solver source and CVRPLIB instances
-│   ├── CVRPLib/          # CVRPLIB instances (.vrp)
+│   ├── CVRPLib/          # CVRPLIB instances (.vrp) and best-known solutions (.sol)
 │   ├── Data/             # Algorithm.Data package
 │   │   └── InputData.java
 │   ├── Metaheuristics/   # Algorithm.Metaheuristics package
