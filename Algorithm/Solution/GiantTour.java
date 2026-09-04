@@ -137,9 +137,13 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                     gt.close();
             if (best != null) {
                 c = true;
-                this.Sequence = best.Sequence;
-                this.AuxiliaryGraph.close();
-                this.AuxiliaryGraph = best.AuxiliaryGraph;
+                // Under the monitor read by getSequenceSnapshot: a crossover may be walking
+                // this individual right now and must not see the sequence change under it.
+                synchronized (this) {
+                    this.Sequence = best.Sequence;
+                    this.AuxiliaryGraph.close();
+                    this.AuxiliaryGraph = best.AuxiliaryGraph;
+                }
             }
             feasibleTours.clear();
         }
@@ -220,6 +224,24 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
                                         .toArray();
     }
     
+    /**
+     * Hands the split procedure the sequence it must walk, under the instance
+     * monitor: an individual taking part in a crossover is concurrently
+     * re-split by the generation loop, and {@link #Split(InputData, double)}
+     * swaps {@code Sequence} for the one of a better split. A walk that read
+     * the field on every step would continue over the new permutation and
+     * revisit stops it had already routed, since it only filters against the
+     * partial solution, producing routes that serve the same stop twice.
+     *
+     * <p>Returning the array itself is snapshot enough: a published sequence is
+     * never permuted in place, only replaced.
+     *
+     * @return the sequence to split
+     */
+    synchronized int[] getSequenceSnapshot() {
+        return this.Sequence;
+    }
+
     /**
      * @param i position in the sequence
      * @return the stop at the given position
@@ -311,7 +333,7 @@ public class GiantTour implements Comparable<GiantTour>, AutoCloseable {
      * dropping the sequence.
      */
     @Override
-    public void close() {
+    public synchronized void close() {
         if (this.AuxiliaryGraph != null)
             this.AuxiliaryGraph.close();
         this.Sequence = null;

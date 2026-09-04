@@ -39,9 +39,6 @@ final class Solver {
 
     private static final File OUTPUT_DIR = new File("Output");
 
-    // ponytail: one solve at a time — System.out is redirected globally to the
-    // SSE stream while solving. Per-session isolation only if concurrency matters.
-    private final Object lock = new Object();
     /** The solver currently running, so {@link #stop} can ask it to stop early. */
     private volatile GeneticAlgorithm current;
 
@@ -66,9 +63,7 @@ final class Solver {
             return;
         }
 
-        synchronized (this.lock) {
-            run(instance, out);
-        }
+        run(instance, out);
     }
 
     /**

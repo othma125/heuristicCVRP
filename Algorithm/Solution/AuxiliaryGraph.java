@@ -30,7 +30,7 @@ public class AuxiliaryGraph implements AutoCloseable {
 
     private final int Length;
     private final double Bound;
-    private final GiantTour[] GiantTours;
+    private final int[][] Tours;
     private AuxiliaryGraphNode[] Nodes;
     private final InputData Data;
     private final Set<ArcSetter> ArcsSetters;
@@ -52,16 +52,20 @@ public class AuxiliaryGraph implements AutoCloseable {
     AuxiliaryGraph(InputData data, double bound, GiantTour ... giant_tours) {
         this.Data = data;
         this.Bound = bound;
-        this.GiantTours = giant_tours;
-        this.Length = this.GiantTours[0].Sequence.length;
+        // Snapshot the parents once: the individuals being recombined are re-split by other
+        // threads, which swaps their sequence, and every walk must see one stable permutation.
+        this.Tours = new int[giant_tours.length][];
+        for (int i = 0; i < giant_tours.length; i++)
+            this.Tours[i] = giant_tours[i].getSequenceSnapshot();
+        this.Length = this.Tours[0].length;
         this.Nodes = new AuxiliaryGraphNode[this.Length + 1];
         for (int i = 0; i <= this.Length; i++) 
             this.Nodes[i] = new AuxiliaryGraphNode(i);
         this.ArcsSetters = ConcurrentHashMap.newKeySet();
-        for (GiantTour gt : this.GiantTours) {
+        for (int[] tour : this.Tours) {
             if (data.isStopRequested())
                 break;
-            ArcSetter setter = new ArcSetter(this, this.Nodes[0], null, gt);
+            ArcSetter setter = new ArcSetter(this, this.Nodes[0], null, tour);
             this.ArcsSetters.add(setter);
             this.phaser.register();
             ForkJoinPool.commonPool().execute(setter);
@@ -99,8 +103,8 @@ public class AuxiliaryGraph implements AutoCloseable {
             if (allMatch) 
                 for (Solution solution : Double.isInfinite(this.Bound) ? node.getParetoSet() : node.getSolutions())
                     if (solution.getTotalDistance() < this.Bound) 
-                        for (GiantTour gt : this.GiantTours) {
-                            ArcSetter setter = new ArcSetter(this, node, solution, gt);
+                        for (int[] tour : this.Tours) {
+                            ArcSetter setter = new ArcSetter(this, node, solution, tour);
                             this.ArcsSetters.add(setter);
                             this.phaser.register();
                             ForkJoinPool.commonPool().execute(setter);
@@ -202,8 +206,8 @@ public class AuxiliaryGraph implements AutoCloseable {
         return this.Data;
     }
 
-    GiantTour[] getGiantTours() {
-        return this.GiantTours;
+    int[][] getTours() {
+        return this.Tours;
     }
 
     Phaser getPhaser() {
