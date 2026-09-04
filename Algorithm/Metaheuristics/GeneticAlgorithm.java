@@ -211,6 +211,7 @@ public class GeneticAlgorithm extends MetaHeuristic {
         if (this.isStopRequested())
             return;
         Arrays.sort(this.Population);
+        this.PendingCrossovers.add(CrossoverPool.submit(() -> this.UpdatePopulation(new GiantTour(this.Data, this.Population))));
     }
     
     /**
